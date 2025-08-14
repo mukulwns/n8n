@@ -1,0 +1,173 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "n8n Self-Hosted REST & Public API",
+    "version": "1.x (latest)"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5678"
+    }
+  ],
+    "security": [
+        { "ApiKeyAuth": [] }
+    ],
+    "components": {
+    "securitySchemes": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-N8N-API-KEY"
+        }
+    }
+    },
+  "paths": {
+    "/rest/login": {
+      "get": {
+        "summary": "Access login page / status",
+        "responses": {
+          "200": { "description": "Login page or status" }
+        }
+      },
+      "post": {
+        "summary": "Log in",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object" } } }
+        },
+        "responses": {
+          "200": { "description": "Logged in, session cookie set" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/rest/logout": {
+      "post": {
+        "summary": "Log out",
+        "responses": {
+          "200": { "description": "Logged out successfully" }
+        }
+      }
+    },
+    "/rest/users/me": {
+      "get": {
+        "summary": "Get current user",
+        "responses": {
+          "200": { "description": "User profile" }
+        }
+      }
+    },
+    "/rest/password-reset": {
+      "post": {
+        "summary": "Request password reset link",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object" } } }
+        },
+        "responses": {
+          "200": { "description": "Reset email sent" }
+        }
+      }
+    },
+    "/rest/password-reset/confirm": {
+      "post": {
+        "summary": "Confirm password reset",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object" } } }
+        },
+        "responses": {
+          "200": { "description": "Password reset successful" }
+        }
+      }
+    },
+    "/api/v1/workflows": {
+      "get": { "summary": "List workflows", "responses": { "200": { "description": "Array of workflows" } }},
+      "post": { "summary": "Create workflow", "requestBody": {"required":true,"content": {"application/json":{"schema":{"type":"object"}}}}, "responses":{"200":{ "description": "Workflow created" }}}
+    },
+    "/api/v1/workflows/{workflowId}": {
+      "get": {
+        "summary": "Get workflow",
+        "parameters": [{"name":"workflowId","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses": { "200": { "description": "Workflow details" } }
+      },
+      "put": {
+        "summary": "Update workflow",
+        "parameters": [{"name":"workflowId","in":"path","required":true,"schema":{"type":"string"}}],
+        "requestBody": { "required": true,"content": {"application/json":{"schema":{"type":"object"}}}},
+        "responses": { "200": { "description": "Workflow updated" } }
+      },
+      "delete": {
+        "summary": "Delete workflow",
+        "parameters": [{"name":"workflowId","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses": { "200": { "description": "Workflow deleted" } }
+      }
+    },
+    "/api/v1/workflows/{workflowId}/activate": {
+      "post": {
+        "summary": "Activate workflow",
+        "parameters": [{"name":"workflowId","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses": {"200":{"description":"Workflow activated"}}
+      }
+    },
+    "/api/v1/workflows/{workflowId}/deactivate": {
+      "post": {
+        "summary": "Deactivate workflow",
+        "parameters": [{"name":"workflowId","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses": {"200":{"description":"Workflow deactivated"}}
+      }
+    },
+    "/api/v1/executions": {
+      "get": {
+        "summary": "List executions",
+        "responses": {"200":{"description":"Array of executions"}}
+      }
+    },
+    "/api/v1/executions/{id}": {
+      "get": {
+        "summary": "Get execution",
+        "parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses":{"200":{"description":"Execution details"}}
+      },
+      "delete": {
+        "summary": "Delete execution",
+        "parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses":{"200":{"description":"Execution deleted"}}
+      }
+    },
+    "/api/v1/credentials": {
+      "get": {"summary":"List credentials","responses":{"200":{"description":"Array of credentials"}}},
+      "post": {"summary":"Create credential","requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object"}}}},"responses":{"200":{"description":"Credential created"}}}
+    },
+    "/api/v1/credentials/{credentialId}": {
+      "get": {"summary":"Get credential","parameters":[{"name":"credentialId","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"Credential details"}}},
+      "patch": {"summary":"Update credential","parameters":[{"name":"credentialId","in":"path","required":true,"schema":{"type":"string"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object"}}}},"responses":{"200":{"description":"Credential updated"}}},
+      "delete": {"summary":"Delete credential","parameters":[{"name":"credentialId","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"Credential deleted"}}}
+    },
+    "/api/v1/credentials/schema/{credentialTypeName}": {
+      "get": {
+        "summary": "Get credential schema",
+        "parameters":[{"name":"credentialTypeName","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses":{"200":{"description":"Credential schema JSON"}}
+      }
+    },
+    "/api/v1/tags": {
+      "get":{"summary":"List tags","responses":{"200":{"description":"Array of tags"}}},
+      "post":{"summary":"Create tag","requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object"}}}},"responses":{"200":{"description":"Tag created"}}}
+    },
+    "/api/v1/tags/{tagId}": {
+      "get":{"summary":"Get tag","parameters":[{"name":"tagId","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"Tag details"}}},
+      "patch":{"summary":"Update tag","parameters":[{"name":"tagId","in":"path","required":true,"schema":{"type":"string"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object"}}}},"responses":{"200":{"description":"Tag updated"}}},
+      "delete":{"summary":"Delete tag","parameters":[{"name":"tagId","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"Tag deleted"}}}
+    },
+    "/api/v1/users": {
+      "get":{"summary":"List users","responses":{"200":{"description":"Array of users"}}},
+      "post":{"summary":"Create user","requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object"}}}},"responses":{"200":{"description":"User created"}}}
+    },
+    "/api/v1/users/{userId}": {
+      "get":{"summary":"Get user","parameters":[{"name":"userId","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"User details"}}},
+      "patch":{"summary":"Update user","parameters":[{"name":"userId","in":"path","required":true,"schema":{"type":"string"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object"}}}},"responses":{"200":{"description":"User updated"}}},
+      "delete":{"summary":"Delete user","parameters":[{"name":"userId","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"User deleted"}}}
+    }
+  }
+}

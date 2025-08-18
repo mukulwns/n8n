@@ -121,6 +121,16 @@ export interface IUser {
 	lastName: string;
 }
 
+export interface ITenant {
+	id: string;                 // UUID of the tenant
+	name: string;               // Name of the organization/business
+	domain?: string | null;     // Optional custom domain
+	plan?: string | null;       // Subscription plan
+	isActive: boolean;          // Tenant active status
+	createdAt: Date;            // From WithTimestamps
+	updatedAt: Date;            // From WithTimestamps
+}
+
 export type ProjectSharingData = {
 	id: string;
 	name: string | null;
@@ -235,10 +245,10 @@ export abstract class ICredentialsHelper {
 export interface IAuthenticateBase {
 	type: string;
 	properties:
-		| {
-				[key: string]: string;
-		  }
-		| IRequestOptionsSimplifiedAuth;
+	| {
+		[key: string]: string;
+	}
+	| IRequestOptionsSimplifiedAuth;
 }
 
 export interface IAuthenticateGeneric extends IAuthenticateBase {
@@ -248,9 +258,9 @@ export interface IAuthenticateGeneric extends IAuthenticateBase {
 
 export type IAuthenticate =
 	| ((
-			credentials: ICredentialDataDecryptedObject,
-			requestOptions: IHttpRequestOptions,
-	  ) => Promise<IHttpRequestOptions>)
+		credentials: ICredentialDataDecryptedObject,
+		requestOptions: IHttpRequestOptions,
+	) => Promise<IHttpRequestOptions>)
 	| IAuthenticateGeneric;
 
 export interface IAuthenticateRuleBase {
@@ -534,12 +544,12 @@ export interface IN8nHttpFullResponse {
 
 export interface IN8nRequestOperations {
 	pagination?:
-		| IN8nRequestOperationPaginationGeneric
-		| IN8nRequestOperationPaginationOffset
-		| ((
-				this: IExecutePaginationFunctions,
-				requestOptions: DeclarativeRestApiSettings.ResultOptions,
-		  ) => Promise<INodeExecutionData[]>);
+	| IN8nRequestOperationPaginationGeneric
+	| IN8nRequestOperationPaginationOffset
+	| ((
+		this: IExecutePaginationFunctions,
+		requestOptions: DeclarativeRestApiSettings.ResultOptions,
+	) => Promise<INodeExecutionData[]>);
 }
 
 export interface IN8nRequestOperationPaginationBase {
@@ -821,18 +831,18 @@ export type SSHCredentials = {
 	sshPort: number;
 	sshUser: string;
 } & (
-	| {
+		| {
 			sshAuthenticateWith: 'password';
 			sshPassword: string;
-	  }
-	| {
+		}
+		| {
 			sshAuthenticateWith: 'privateKey';
 			// TODO: rename this to `sshPrivateKey`
 			privateKey: string;
 			// TODO: rename this to `sshPassphrase`
 			passphrase?: string;
-	  }
-);
+		}
+	);
 
 export interface SSHTunnelFunctions {
 	getSSHClient(credentials: SSHCredentials, abortController?: AbortController): Promise<SSHClient>;
@@ -846,11 +856,11 @@ export type CronExpression =
 type CronRecurrenceRule =
 	| { activated: false }
 	| {
-			activated: true;
-			index: number;
-			intervalSize: number;
-			typeInterval: 'hours' | 'days' | 'weeks' | 'months';
-	  };
+		activated: true;
+		index: number;
+		intervalSize: number;
+		typeInterval: 'hours' | 'days' | 'weeks' | 'months';
+	};
 
 export type CronContext = {
 	nodeId: string;
@@ -974,21 +984,21 @@ export type IExecuteFunctions = ExecuteFunctions.GetNodeParameterFn &
 
 		nodeHelpers: NodeHelperFunctions;
 		helpers: RequestHelperFunctions &
-			BaseHelperFunctions &
-			BinaryHelperFunctions &
-			DeduplicationHelperFunctions &
-			FileSystemHelperFunctions &
-			SSHTunnelFunctions & {
-				normalizeItems(items: INodeExecutionData | INodeExecutionData[]): INodeExecutionData[];
-				constructExecutionMetaData(
-					inputData: INodeExecutionData[],
-					options: { itemData: IPairedItemData | IPairedItemData[] },
-				): NodeExecutionWithMetadata[];
-				assertBinaryData(itemIndex: number, propertyName: string): IBinaryData;
-				getBinaryDataBuffer(itemIndex: number, propertyName: string): Promise<Buffer>;
-				detectBinaryEncoding(buffer: Buffer): string;
-				copyInputItems(items: INodeExecutionData[], properties: string[]): IDataObject[];
-			};
+		BaseHelperFunctions &
+		BinaryHelperFunctions &
+		DeduplicationHelperFunctions &
+		FileSystemHelperFunctions &
+		SSHTunnelFunctions & {
+			normalizeItems(items: INodeExecutionData | INodeExecutionData[]): INodeExecutionData[];
+			constructExecutionMetaData(
+				inputData: INodeExecutionData[],
+				options: { itemData: IPairedItemData | IPairedItemData[] },
+			): NodeExecutionWithMetadata[];
+			assertBinaryData(itemIndex: number, propertyName: string): IBinaryData;
+			getBinaryDataBuffer(itemIndex: number, propertyName: string): Promise<Buffer>;
+			detectBinaryEncoding(buffer: Buffer): string;
+			copyInputItems(items: INodeExecutionData[], properties: string[]): IDataObject[];
+		};
 
 		getParentCallbackManager(): CallbackManager | undefined;
 
@@ -1009,12 +1019,12 @@ export interface IExecuteSingleFunctions extends BaseExecutionFunctions {
 	): NodeParameterValueType | object;
 
 	helpers: RequestHelperFunctions &
-		BaseHelperFunctions &
-		BinaryHelperFunctions & {
-			assertBinaryData(propertyName: string, inputIndex?: number): IBinaryData;
-			getBinaryDataBuffer(propertyName: string, inputIndex?: number): Promise<Buffer>;
-			detectBinaryEncoding(buffer: Buffer): string;
-		};
+	BaseHelperFunctions &
+	BinaryHelperFunctions & {
+		assertBinaryData(propertyName: string, inputIndex?: number): IBinaryData;
+		getBinaryDataBuffer(propertyName: string, inputIndex?: number): Promise<Buffer>;
+		detectBinaryEncoding(buffer: Buffer): string;
+	};
 }
 
 export type ISupplyDataFunctions = ExecuteFunctions.GetNodeParameterFn &
@@ -1092,9 +1102,9 @@ export interface IPollFunctions
 		options?: IGetNodeParameterOptions,
 	): NodeParameterValueType | object;
 	helpers: RequestHelperFunctions &
-		BaseHelperFunctions &
-		BinaryHelperFunctions &
-		SchedulingFunctions;
+	BaseHelperFunctions &
+	BinaryHelperFunctions &
+	SchedulingFunctions;
 }
 
 export interface ITriggerFunctions
@@ -1111,10 +1121,10 @@ export interface ITriggerFunctions
 		options?: IGetNodeParameterOptions,
 	): NodeParameterValueType | object;
 	helpers: RequestHelperFunctions &
-		BaseHelperFunctions &
-		BinaryHelperFunctions &
-		SSHTunnelFunctions &
-		SchedulingFunctions;
+	BaseHelperFunctions &
+	BinaryHelperFunctions &
+	SSHTunnelFunctions &
+	SchedulingFunctions;
 }
 
 export interface IHookFunctions
@@ -1221,15 +1231,15 @@ export interface IPairedItemData {
 
 export interface INodeExecutionData {
 	[key: string]:
-		| IDataObject
-		| IBinaryKeyData
-		| IPairedItemData
-		| IPairedItemData[]
-		| NodeApiError
-		| NodeOperationError
-		| number
-		| string
-		| undefined;
+	| IDataObject
+	| IBinaryKeyData
+	| IPairedItemData
+	| IPairedItemData[]
+	| NodeApiError
+	| NodeOperationError
+	| number
+	| string
+	| undefined;
 	json: IDataObject;
 	binary?: IBinaryKeyData;
 	error?: NodeApiError | NodeOperationError;
@@ -1865,10 +1875,10 @@ export interface INodePropertyRouting {
 
 export type PostReceiveAction =
 	| ((
-			this: IExecuteSingleFunctions,
-			items: INodeExecutionData[],
-			response: IN8nHttpFullResponse,
-	  ) => Promise<INodeExecutionData[]>)
+		this: IExecuteSingleFunctions,
+		items: INodeExecutionData[],
+		response: IN8nHttpFullResponse,
+	) => Promise<INodeExecutionData[]>)
 	| IPostReceiveBinaryData
 	| IPostReceiveFilter
 	| IPostReceiveLimit
@@ -2882,9 +2892,9 @@ export type FieldType = keyof FieldTypeMap;
 export type ValidationResult<T extends FieldType = FieldType> =
 	| { valid: false; errorMessage: string }
 	| {
-			valid: true;
-			newValue?: FieldTypeMap[T];
-	  };
+		valid: true;
+		newValue?: FieldTypeMap[T];
+	};
 
 export type ResourceMapperValue = {
 	mappingMode: string;

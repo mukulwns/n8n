@@ -10,6 +10,8 @@ import {
 	OneToMany,
 	PrimaryGeneratedColumn,
 	BeforeInsert,
+	ManyToOne,
+	JoinColumn,
 } from '@n8n/typeorm';
 
 import { IsEmail, IsString, Length } from 'class-validator';
@@ -25,6 +27,7 @@ import type { IPersonalizationSurveyAnswers } from './types-db';
 import { lowerCaser, objectRetriever } from '../utils/transformers';
 import { NoUrl } from '../utils/validators/no-url.validator';
 import { NoXss } from '../utils/validators/no-xss.validator';
+import { Tenant } from './tenant';
 
 // this is the model of user
 @Entity()
@@ -106,6 +109,12 @@ export class User extends WithTimestamps implements IUser, AuthPrincipal {
 
 	@Column({ type: 'date', nullable: true })
 	lastActiveAt?: Date | null;
+	@ManyToOne(() => Tenant, (tenant) => tenant.users, { nullable: true, onDelete: 'SET NULL' })
+	@JoinColumn({ name: 'tenantId' })
+	tenant?: Tenant;
+
+	@Column({ type: 'uuid', nullable: true })
+	tenantId?: string | null;
 
 	/**
 	 * Whether the user is pending setup completion.

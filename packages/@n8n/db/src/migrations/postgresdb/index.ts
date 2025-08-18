@@ -89,6 +89,8 @@ import { AddWorkflowArchivedColumn1745934666076 } from '../common/1745934666076-
 import { DropRoleTable1745934666077 } from '../common/1745934666077-DropRoleTable';
 import { AddProjectDescriptionColumn1747824239000 } from '../common/1747824239000-AddProjectDescriptionColumn';
 import { AddLastActiveAtColumnToUser1750252139166 } from '../common/1750252139166-AddLastActiveAtColumnToUser';
+import { CreateTenantTable1692000000000 } from './1755149747900-1691923200000-CreateTenantTable'
+
 import type { Migration } from '../migration-types';
 
 export const postgresMigrations: Migration[] = [
@@ -183,4 +185,5 @@ export const postgresMigrations: Migration[] = [
 	AddProjectDescriptionColumn1747824239000,
 	AddLastActiveAtColumnToUser1750252139166,
 	AddInputsOutputsToTestCaseExecution1752669793000,
+	CreateTenantTable1692000000000,
 ];

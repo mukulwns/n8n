@@ -61,6 +61,7 @@ const projectIcon = computed<IconOrEmoji>(() => {
 		return isIconOrEmoji(project.icon) ? project.icon : defaultIcon;
 	}
 
+
 	return defaultIcon;
 });
 
@@ -113,31 +114,16 @@ watch(
 </script>
 <template>
 	<div>
-		<N8nSelect
-			v-if="!props.static"
-			:model-value="selectedProject"
-			data-test-id="project-sharing-select"
-			:filterable="true"
-			:filter-method="setFilter"
-			:placeholder="selectPlaceholder"
-			:default-first-option="true"
-			:no-data-text="noDataText"
-			size="large"
-			:disabled="props.readonly"
-			@update:model-value="onProjectSelected"
-		>
+		<N8nSelect v-if="!props.static" :model-value="selectedProject" data-test-id="project-sharing-select"
+			:filterable="true" :filter-method="setFilter" :placeholder="selectPlaceholder" :default-first-option="true"
+			:no-data-text="noDataText" size="large" :disabled="props.readonly" @update:model-value="onProjectSelected">
 			<template #prefix>
 				<N8nIcon v-if="projectIcon.type === 'icon'" :icon="projectIcon.value" color="text-dark" />
 				<N8nText v-else-if="projectIcon.type === 'emoji'" color="text-light" :class="$style.emoji">
 					{{ projectIcon.value }}
 				</N8nText>
 			</template>
-			<N8nOption
-				v-for="project in filteredProjects"
-				:key="project.id"
-				:value="project.id"
-				:label="project.name ?? ''"
-			>
+			<N8nOption v-for="project in filteredProjects" :key="project.id" :value="project.id" :label="project.name ?? ''">
 				<ProjectSharingInfo :project="project" />
 			</N8nOption>
 		</N8nSelect>
@@ -146,36 +132,18 @@ watch(
 				<ProjectSharingInfo :project="props.homeProject">
 					<N8nBadge theme="tertiary" bold>
 						{{ locale.baseText('auth.roles.owner') }}
-					</N8nBadge></ProjectSharingInfo
-				>
+					</N8nBadge>
+				</ProjectSharingInfo>
 			</li>
-			<li
-				v-for="project in model"
-				:key="project.id"
-				:class="$style.project"
-				data-test-id="project-sharing-list-item"
-			>
+			<li v-for="project in model" :key="project.id" :class="$style.project" data-test-id="project-sharing-list-item">
 				<ProjectSharingInfo :project="project" />
-				<N8nSelect
-					v-if="props.roles?.length && !props.static"
-					:class="$style.projectRoleSelect"
-					:model-value="props.roles[0]"
-					:disabled="props.readonly"
-					size="small"
-					@update:model-value="onRoleAction(project, $event)"
-				>
+				<N8nSelect v-if="props.roles?.length && !props.static" :class="$style.projectRoleSelect"
+					:model-value="props.roles[0]" :disabled="props.readonly" size="small"
+					@update:model-value="onRoleAction(project, $event)">
 					<N8nOption v-for="role in roles" :key="role.role" :value="role.role" :label="role.name" />
 				</N8nSelect>
-				<N8nButton
-					v-if="!props.static"
-					type="tertiary"
-					native-type="button"
-					square
-					icon="trash-2"
-					:disabled="props.readonly"
-					data-test-id="project-sharing-remove"
-					@click="onRoleAction(project, 'remove')"
-				/>
+				<N8nButton v-if="!props.static" type="tertiary" native-type="button" square icon="trash-2"
+					:disabled="props.readonly" data-test-id="project-sharing-remove" @click="onRoleAction(project, 'remove')" />
 			</li>
 		</ul>
 	</div>

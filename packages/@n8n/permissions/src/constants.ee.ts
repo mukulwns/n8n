@@ -20,6 +20,8 @@ export const RESOURCES = {
 	sourceControl: ['pull', 'push', 'manage'] as const,
 	tag: [...DEFAULT_OPERATIONS] as const,
 	user: ['resetPassword', 'changeRole', 'enforceMfa', ...DEFAULT_OPERATIONS] as const,
+	tenant: ['assignDomain', 'changePlan', ...DEFAULT_OPERATIONS] as const,
+
 	variable: [...DEFAULT_OPERATIONS] as const,
 	workersView: ['manage'] as const,
 	workflow: ['share', 'execute', 'move', ...DEFAULT_OPERATIONS] as const,

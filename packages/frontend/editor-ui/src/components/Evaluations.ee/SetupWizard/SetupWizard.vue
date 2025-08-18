@@ -96,13 +96,9 @@ function onSeePlans() {
 		<div :class="$style.steps">
 			<!-- Step 1 -->
 			<div :class="[$style.step, $style.completed]">
-				<StepHeader
-					:step-number="1"
-					:title="locale.baseText('evaluations.setupWizard.step1.title')"
-					:is-completed="evaluationStore.evaluationTriggerExists"
-					:is-active="activeStepIndex === 0"
-					@click="toggleStep(0)"
-				/>
+				<StepHeader :step-number="1" :title="locale.baseText('evaluations.setupWizard.step1.title')"
+					:is-completed="evaluationStore.evaluationTriggerExists" :is-active="activeStepIndex === 0"
+					@click="toggleStep(0)" />
 				<div v-if="activeStepIndex === 0" :class="$style.stepContent">
 					<ul :class="$style.bulletPoints">
 						<li>
@@ -118,11 +114,7 @@ function onSeePlans() {
 					</ul>
 
 					<div :class="$style.actionButton">
-						<N8nButton
-							size="small"
-							type="secondary"
-							@click="navigateToWorkflow('addEvaluationTrigger')"
-						>
+						<N8nButton size="small" type="secondary" @click="navigateToWorkflow('addEvaluationTrigger')">
 							{{ locale.baseText('evaluations.setupWizard.step1.button') }}
 						</N8nButton>
 					</div>
@@ -131,13 +123,9 @@ function onSeePlans() {
 
 			<!-- Step 2 -->
 			<div :class="[$style.step, activeStepIndex === 1 ? $style.active : '']">
-				<StepHeader
-					:step-number="2"
-					:title="locale.baseText('evaluations.setupWizard.step2.title')"
-					:is-completed="evaluationStore.evaluationSetOutputsNodeExist"
-					:is-active="activeStepIndex === 1"
-					@click="toggleStep(1)"
-				/>
+				<StepHeader :step-number="2" :title="locale.baseText('evaluations.setupWizard.step2.title')"
+					:is-completed="evaluationStore.evaluationSetOutputsNodeExist" :is-active="activeStepIndex === 1"
+					@click="toggleStep(1)" />
 				<div v-if="activeStepIndex === 1" :class="$style.stepContent">
 					<ul :class="$style.bulletPoints">
 						<li>
@@ -147,11 +135,7 @@ function onSeePlans() {
 						</li>
 					</ul>
 					<div :class="$style.actionButton">
-						<N8nButton
-							size="small"
-							type="secondary"
-							@click="navigateToWorkflow('addEvaluationNode')"
-						>
+						<N8nButton size="small" type="secondary" @click="navigateToWorkflow('addEvaluationNode')">
 							{{ locale.baseText('evaluations.setupWizard.step2.button') }}
 						</N8nButton>
 					</div>
@@ -160,14 +144,9 @@ function onSeePlans() {
 
 			<!-- Step 3 -->
 			<div :class="$style.step">
-				<StepHeader
-					:step-number="3"
-					:title="locale.baseText('evaluations.setupWizard.step3.title')"
-					:is-completed="evaluationStore.evaluationSetMetricsNodeExist"
-					:is-active="activeStepIndex === 2"
-					:is-optional="true"
-					@click="toggleStep(2)"
-				/>
+				<StepHeader :step-number="3" :title="locale.baseText('evaluations.setupWizard.step3.title')"
+					:is-completed="evaluationStore.evaluationSetMetricsNodeExist" :is-active="activeStepIndex === 2"
+					:is-optional="true" @click="toggleStep(2)" />
 				<div v-if="activeStepIndex === 2" :class="$style.stepContent">
 					<ul v-if="!evaluationsQuotaExceeded" :class="$style.bulletPoints">
 						<li>
@@ -185,35 +164,23 @@ function onSeePlans() {
 						{{ locale.baseText('evaluations.setupWizard.limitReached') }}
 					</N8nCallout>
 					<div :class="$style.actionButton">
-						<N8nButton
-							v-if="!evaluationsQuotaExceeded"
-							size="small"
-							type="secondary"
-							@click="navigateToWorkflow('addEvaluationNode')"
-						>
+						<N8nButton v-if="!evaluationsQuotaExceeded" size="small" type="secondary"
+							@click="navigateToWorkflow('addEvaluationNode')">
 							{{ locale.baseText('evaluations.setupWizard.step3.button') }}
 						</N8nButton>
 						<N8nButton v-else size="small" @click="onSeePlans">
 							{{ locale.baseText('generic.seePlans') }}
 						</N8nButton>
-						<N8nButton
-							size="small"
-							text
-							style="color: var(--color-text-light)"
-							@click="toggleStep(3)"
-						>
+						<N8nButton size="small" text style="color: var(--color-text-light)" @click="toggleStep(3)">
 							{{ locale.baseText('evaluations.setupWizard.step3.skip') }}
 						</N8nButton>
 					</div>
-					<div
-						v-if="usageStore.workflowsWithEvaluationsLimit !== -1 && evaluationsAvailable"
-						:class="$style.quotaNote"
-					>
+					<div v-if="usageStore.workflowsWithEvaluationsLimit !== -1 && evaluationsAvailable" :class="$style.quotaNote">
 						<N8nText size="xsmall" color="text-base">
 							<I18nT keypath="evaluations.setupWizard.step3.notice" scope="global">
 								<template #link>
-									<a style="text-decoration: underline; color: inherit" @click="onSeePlans"
-										>{{ locale.baseText('evaluations.setupWizard.step3.notice.link') }}
+									<a style="text-decoration: underline; color: inherit" @click="onSeePlans">{{
+										locale.baseText('evaluations.setupWizard.step3.notice.link') }}
 									</a>
 								</template>
 							</I18nT>
@@ -224,38 +191,20 @@ function onSeePlans() {
 
 			<!-- Step 4 -->
 			<div :class="$style.step">
-				<StepHeader
-					:step-number="4"
-					:title="locale.baseText('evaluations.setupWizard.step4.title')"
-					:is-completed="false"
-					:is-active="activeStepIndex === 3"
-					@click="toggleStep(3)"
-				>
+				<StepHeader :step-number="4" :title="locale.baseText('evaluations.setupWizard.step4.title')"
+					:is-completed="false" :is-active="activeStepIndex === 3" @click="toggleStep(3)">
 					<div :class="[$style.actionButton, $style.actionButtonInline]">
-						<N8nButton
-							v-if="evaluationStore.evaluationSetMetricsNodeExist && !evaluationsQuotaExceeded"
-							size="medium"
-							type="secondary"
-							:disabled="
-								!evaluationStore.evaluationTriggerExists ||
+						<N8nButton v-if="evaluationStore.evaluationSetMetricsNodeExist && !evaluationsQuotaExceeded" size="medium"
+							type="secondary" :disabled="!evaluationStore.evaluationTriggerExists ||
 								(!evaluationStore.evaluationSetOutputsNodeExist &&
 									!evaluationStore.evaluationSetMetricsNodeExist)
-							"
-							@click="$emit('runTest')"
-						>
+								" @click="$emit('runTest')">
 							{{ locale.baseText('evaluations.setupWizard.step4.button') }}
 						</N8nButton>
-						<N8nButton
-							v-else
-							size="medium"
-							type="secondary"
-							:disabled="
-								!evaluationStore.evaluationTriggerExists ||
-								(!evaluationStore.evaluationSetOutputsNodeExist &&
-									!evaluationStore.evaluationSetMetricsNodeExist)
-							"
-							@click="navigateToWorkflow('executeEvaluation')"
-						>
+						<N8nButton v-else size="medium" type="secondary" :disabled="!evaluationStore.evaluationTriggerExists ||
+							(!evaluationStore.evaluationSetOutputsNodeExist &&
+								!evaluationStore.evaluationSetMetricsNodeExist)
+							" @click="navigateToWorkflow('executeEvaluation')">
 							{{ locale.baseText('evaluations.setupWizard.step4.altButton') }}
 						</N8nButton>
 					</div>
@@ -316,6 +265,7 @@ function onSeePlans() {
 		opacity: 0;
 		transform: translateY(-10px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);

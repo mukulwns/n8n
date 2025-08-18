@@ -53,13 +53,22 @@ export class SharedWorkflowRepository extends Repository<SharedWorkflow> {
 		return sharing?.role;
 	}
 
+	// async makeOwnerOfAllWorkflows(project: Project) {
+	// 	return await this.update(
+	// 		{
+	// 			projectId: Not(project.id),
+	// 			role: 'workflow:owner',
+	// 		},
+	// 		{ project },
+	// 	);
+	// }
 	async makeOwnerOfAllWorkflows(project: Project) {
 		return await this.update(
 			{
 				projectId: Not(project.id),
 				role: 'workflow:owner',
 			},
-			{ project },
+			{ projectId: project.id }, // ✅ only the ID
 		);
 	}
 

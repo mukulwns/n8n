@@ -30,6 +30,7 @@ import { WorkflowEntity } from './workflow-entity';
 import { WorkflowHistory } from './workflow-history';
 import { WorkflowStatistics } from './workflow-statistics';
 import { WorkflowTagMapping } from './workflow-tag-mapping';
+import { Tenant } from './tenant';
 
 export {
 	EventDestinations,
@@ -50,6 +51,7 @@ export {
 	SharedWorkflow,
 	TagEntity,
 	User,
+	Tenant,
 	WorkflowEntity,
 	WorkflowStatistics,
 	WorkflowTagMapping,
@@ -85,6 +87,7 @@ export const entities = {
 	SharedWorkflow,
 	TagEntity,
 	User,
+	Tenant,
 	WorkflowEntity,
 	WorkflowStatistics,
 	WorkflowTagMapping,

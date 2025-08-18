@@ -9,13 +9,24 @@ export class WorkflowTagMappingRepository extends Repository<WorkflowTagMapping>
 		super(WorkflowTagMapping, dataSource.manager);
 	}
 
+	// async overwriteTaggings(workflowId: string, tagIds: string[]) {
+	// 	return await this.manager.transaction(async (tx) => {
+	// 		await tx.delete(WorkflowTagMapping, { workflowId });
+
+	// 		const taggings = tagIds.map((tagId) => this.create({ workflowId, tagId }));
+
+	// 		return await tx.insert(WorkflowTagMapping, taggings);
+	// 	});
+	// }
 	async overwriteTaggings(workflowId: string, tagIds: string[]) {
 		return await this.manager.transaction(async (tx) => {
 			await tx.delete(WorkflowTagMapping, { workflowId });
 
-			const taggings = tagIds.map((tagId) => this.create({ workflowId, tagId }));
+			// plain object literals instead of entity instances
+			const taggings = tagIds.map((tagId) => ({ workflowId, tagId }));
 
 			return await tx.insert(WorkflowTagMapping, taggings);
 		});
 	}
+
 }

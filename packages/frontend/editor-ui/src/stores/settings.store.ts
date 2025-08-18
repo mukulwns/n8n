@@ -54,7 +54,8 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 
 	const databaseType = computed(() => settings.value?.databaseType);
 
-	const planName = computed(() => settings.value?.license.planName ?? 'Community');
+	// const planName = computed(() => settings.value?.license.planName ?? 'Community');
+	const planName = computed(() => settings.value?.license.planName ?? 'Enterprise');
 
 	const consumerId = computed(() => settings.value?.license.consumerId);
 

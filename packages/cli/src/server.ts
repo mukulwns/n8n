@@ -50,6 +50,7 @@ import '@/controllers/tags.controller';
 import '@/controllers/translation.controller';
 import '@/controllers/folder.controller';
 import '@/controllers/users.controller';
+import '@/controllers/tenant.controller';
 import '@/controllers/user-settings.controller';
 import '@/controllers/workflow-statistics.controller';
 import '@/controllers/api-keys.controller';
@@ -360,7 +361,7 @@ export class Server extends AbstractServer {
 						try {
 							await fsAccess(filePath);
 							return res.sendFile(filePath, { maxAge, dotfiles: 'allow' });
-						} catch {}
+						} catch { }
 					}
 					res.sendStatus(404);
 				},
@@ -379,7 +380,7 @@ export class Server extends AbstractServer {
 					try {
 						await fsAccess(filePath);
 						return res.sendFile(filePath, { ...cacheOptions, dotfiles: 'allow' });
-					} catch {}
+					} catch { }
 				}
 				res.sendStatus(404);
 			};
@@ -399,12 +400,12 @@ export class Server extends AbstractServer {
 				contentSecurityPolicy: isEmpty(cspDirectives)
 					? false
 					: {
-							useDefaults: false,
-							reportOnly: cspReportOnly,
-							directives: {
-								...cspDirectives,
-							},
+						useDefaults: false,
+						reportOnly: cspReportOnly,
+						directives: {
+							...cspDirectives,
 						},
+					},
 				xFrameOptions:
 					isPreviewMode || inE2ETests || inDevelopment ? false : { action: 'sameorigin' },
 				dnsPrefetchControl: false,
@@ -416,10 +417,10 @@ export class Server extends AbstractServer {
 				// if n8n is behind a reverse-proxy, then these headers needs to be configured there
 				strictTransportSecurity: isTLSEnabled
 					? {
-							maxAge: 180 * Time.days.toSeconds,
-							includeSubDomains: false,
-							preload: false,
-						}
+						maxAge: 180 * Time.days.toSeconds,
+						includeSubDomains: false,
+						preload: false,
+					}
 					: false,
 			});
 

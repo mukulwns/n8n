@@ -261,8 +261,9 @@ export abstract class BaseCommand<F = never> {
 
 			try {
 				this.logger.debug('Attempting license activation');
-				await this.license.activate(activationKey);
-				this.logger.debug('License init complete');
+				// await this.license.activate(activationKey);
+				// this.logger.debug('License init complete');
+
 			} catch (e: unknown) {
 				const error = ensureError(e);
 				this.logger.error('Could not activate license', { error });

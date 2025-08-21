@@ -11,6 +11,11 @@ const ROLE_NAMES: Record<AllRoleTypes, string> = {
 	'global:owner': 'Owner',
 	'global:admin': 'Admin',
 	'global:member': 'Member',
+	// Tenant
+	'tenant:owner': 'Tenant Owner',
+	'tenant:admin': 'Tenant Admin',
+	'tenant:member': 'Tenant Member',
+
 	'project:personalOwner': 'Project Owner',
 	'project:admin': 'Project Admin',
 	'project:editor': 'Project Editor',

@@ -29,7 +29,7 @@ export class CreateUserManagement1646992772331 implements ReversibleMigration {
 				"createdAt" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				"updatedAt" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				"globalRoleId" int NOT NULL,
-						"tenantId" UUID, -- 👈 NEW COLUMN
+				"tenantId" UUID,
 				CONSTRAINT "PK_${tablePrefix}ea8f538c94b6e352418254ed6474a81f" PRIMARY KEY ("id"),
 				CONSTRAINT "UQ_${tablePrefix}e12875dfb3b1d92d7d7c5377e2" UNIQUE (email),
 				CONSTRAINT "FK_${tablePrefix}f0609be844f9200ff4365b1bb3d" FOREIGN KEY ("globalRoleId") REFERENCES ${tablePrefix}role (id)

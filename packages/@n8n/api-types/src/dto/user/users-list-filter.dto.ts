@@ -40,6 +40,8 @@ const userFilterSchema = z.object({
 	email: z.string().optional(),
 	mfaEnabled: z.boolean().optional(),
 	fullText: z.string().optional(), // Full text search across firstName, lastName, and email
+	tenantId: z.string().optional(), //  Add tenant filter
+
 });
 
 const filterValidatorSchema = z
@@ -79,4 +81,5 @@ export class UsersListFilterDto extends Z.class({
 	expand: userExpandSchema.optional(),
 	// Default sort order is role:asc, secondary sort criteria is name:asc
 	sortBy: usersListSortByValidator,
-}) {}
+	where: z.any().optional(),
+}) { }

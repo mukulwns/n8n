@@ -9,6 +9,7 @@ import type {
 	roleNamespaceSchema,
 	teamRoleSchema,
 	workflowSharingRoleSchema,
+	tenantRoleSchema
 } from './schemas.ee';
 
 /** Represents a resource that can have permissions applied to it */
@@ -52,9 +53,10 @@ export type CredentialSharingRole = z.infer<typeof credentialSharingRoleSchema>;
 export type WorkflowSharingRole = z.infer<typeof workflowSharingRoleSchema>;
 export type TeamProjectRole = z.infer<typeof teamRoleSchema>;
 export type ProjectRole = z.infer<typeof projectRoleSchema>;
+export type TenantRole = z.infer<typeof tenantRoleSchema>;
 
 /** Union of all possible role types in the system */
-export type AllRoleTypes = GlobalRole | ProjectRole | WorkflowSharingRole | CredentialSharingRole;
+export type AllRoleTypes = TenantRole | GlobalRole | ProjectRole | WorkflowSharingRole | CredentialSharingRole;
 
 type RoleObject<T extends AllRoleTypes> = {
 	role: T;

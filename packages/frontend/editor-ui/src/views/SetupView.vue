@@ -89,7 +89,7 @@ const onSubmit = async (values: { [key: string]: string | boolean }) => {
 		if (values.agree === true) {
 			try {
 				await usersStore.submitContactEmail(values.email.toString(), values.agree);
-			} catch {}
+			} catch { }
 		}
 		if (forceRedirectedHere) {
 			await router.push({ name: VIEWS.HOMEPAGE });
@@ -104,10 +104,5 @@ const onSubmit = async (values: { [key: string]: string | boolean }) => {
 </script>
 
 <template>
-	<AuthView
-		:form="formConfig"
-		:form-loading="loading"
-		data-test-id="setup-form"
-		@submit="onSubmit"
-	/>
+	<AuthView :form="formConfig" :form-loading="loading" data-test-id="setup-form" @submit="onSubmit" />
 </template>

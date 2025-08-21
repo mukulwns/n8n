@@ -59,7 +59,7 @@ export class UsersController {
 		private readonly projectService: ProjectService,
 		private readonly eventService: EventService,
 		private readonly folderService: FolderService,
-	) {}
+	) { }
 
 	static ERROR_MESSAGES = {
 		CHANGE_ROLE: {
@@ -101,7 +101,15 @@ export class UsersController {
 		_res: Response,
 		@Query listQueryOptions: UsersListFilterDto,
 	) {
-		const userQuery = this.userRepository.buildUserQuery(listQueryOptions);
+		const tenantId = `00abfdfa-b8ed-481a-b6f0-519eed4194a9`; // <-- inject tenant context
+
+		const userQuery = this.userRepository.buildUserQuery({
+			...listQueryOptions,
+			where: {
+				...listQueryOptions.filter,
+				tenantId, //  enforce tenant scope
+			},
+		});
 
 		const response = await userQuery.getManyAndCount();
 
@@ -136,7 +144,10 @@ export class UsersController {
 	@GlobalScope('user:resetPassword')
 	async getUserPasswordResetLink(req: UserRequest.PasswordResetLink) {
 		const user = await this.userRepository.findOneOrFail({
-			where: { id: req.params.id },
+			where: {
+				id: req.params.id, tenantId: `00abfdfa-b8ed-481a-b6f0-519eed4194a9`
+				// ?? undefined
+			},
 		});
 		if (!user) {
 			throw new NotFoundError('User not found');
@@ -186,7 +197,11 @@ export class UsersController {
 
 		const { transferId } = req.query;
 
-		const userToDelete = await this.userRepository.findOneBy({ id: idToDelete });
+		const userToDelete = await this.userRepository.findOneBy({
+			id: idToDelete,
+			tenantId: `00abfdfa-b8ed-481a-b6f0-519eed4194a9`
+			// ?? undefined,
+		});
 
 		if (!userToDelete) {
 			throw new NotFoundError(
@@ -302,7 +317,11 @@ export class UsersController {
 		const { NO_ADMIN_ON_OWNER, NO_USER, NO_OWNER_ON_OWNER } =
 			UsersController.ERROR_MESSAGES.CHANGE_ROLE;
 
-		const targetUser = await this.userRepository.findOneBy({ id });
+		const targetUser = await this.userRepository.findOneBy({
+			id,
+			tenantId: `00abfdfa-b8ed-481a-b6f0-519eed4194a9`
+			// ?? undefined
+		});
 		if (targetUser === null) {
 			throw new NotFoundError(NO_USER);
 		}

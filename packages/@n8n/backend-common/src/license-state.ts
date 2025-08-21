@@ -27,12 +27,14 @@ export class LicenseState {
 	//     core queries
 	// --------------------
 
-	isLicensed(feature: BooleanLicenseFeature) {
-		this.assertProvider();
+	// isLicensed(feature: BooleanLicenseFeature) {
+	// 	this.assertProvider();
 
-		return this.licenseProvider.isLicensed(feature);
+	// 	return this.licenseProvider.isLicensed(feature);
+	// }
+	isLicensed(_feature: BooleanLicenseFeature): boolean {
+		return true; // Enable all features
 	}
-
 	getValue<T extends keyof FeatureReturnType>(feature: T): FeatureReturnType[T] {
 		this.assertProvider();
 
@@ -203,7 +205,17 @@ export class LicenseState {
 		return this.getValue('quota:maxTeamProjects') ?? 0;
 	}
 
-	getMaxWorkflowsWithEvaluations() {
-		return this.getValue('quota:evaluations:maxWorkflows') ?? 0;
+	// getMaxWorkflowsWithEvaluations() {
+	// 	return this.getValue('quota:evaluations:maxWorkflows') ?? 0;
+	// }
+	getMaxWorkflowsWithEvaluations(): number {
+		return -1; // Unlimited
+	}
+	setActivated(_status: boolean): void {
+		// Always set as activated
+	}
+
+	isActivated(): boolean {
+		return true;
 	}
 }

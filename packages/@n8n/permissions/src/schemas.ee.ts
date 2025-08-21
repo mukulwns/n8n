@@ -19,3 +19,12 @@ export const projectRoleSchema = z.enum([...personalRoleSchema.options, ...teamR
 export const credentialSharingRoleSchema = z.enum(['credential:owner', 'credential:user']);
 
 export const workflowSharingRoleSchema = z.enum(['workflow:owner', 'workflow:editor']);
+export const tenantRoleSchema = z.enum([
+	'tenant:owner',
+	'tenant:admin',
+	'tenant:member',
+]);
+export const assignableTenantRoleSchema = tenantRoleSchema.exclude([
+	'tenant:owner', // Owner cannot be reassigned
+]);
+

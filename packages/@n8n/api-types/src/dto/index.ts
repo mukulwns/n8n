@@ -40,7 +40,7 @@ export { PasswordUpdateRequestDto } from './user/password-update-request.dto';
 export { RoleChangeRequestDto } from './user/role-change-request.dto';
 export { SettingsUpdateRequestDto } from './user/settings-update-request.dto';
 export { UserUpdateRequestDto } from './user/user-update-request.dto';
-
+export { CreateTenantDto } from './tenant/create-update-tenant-request.dto'
 export { CommunityRegisteredRequestDto } from './license/community-registered-request.dto';
 
 export { PullWorkFolderRequestDto } from './source-control/pull-work-folder-request.dto';

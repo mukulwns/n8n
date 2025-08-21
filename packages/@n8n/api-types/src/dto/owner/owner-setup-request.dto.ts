@@ -8,4 +8,5 @@ export class OwnerSetupRequestDto extends Z.class({
 	firstName: z.string().min(1, 'First name is required'),
 	lastName: z.string().min(1, 'Last name is required'),
 	password: passwordSchema,
-}) {}
+	tenantId: z.string().min(1, "Tenant Id required").optional()
+}) { }

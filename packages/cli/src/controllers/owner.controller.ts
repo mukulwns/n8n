@@ -26,7 +26,7 @@ export class OwnerController {
 		private readonly passwordUtility: PasswordUtility,
 		private readonly postHog: PostHogClient,
 		private readonly userRepository: UserRepository,
-	) { }
+	) {}
 
 	/**
 	 * Promote a shell into the owner of the n8n instance,
@@ -50,7 +50,7 @@ export class OwnerController {
 		owner.firstName = firstName;
 		owner.lastName = lastName;
 		owner.password = await this.passwordUtility.hash(password);
-		owner.tenantId = "00abfdfa-b8ed-481a-b6f0-519eed4194a9";
+		owner.tenantId = '3926b251-1aac-41a5-a0bf-b25fa2ba2222';
 		// TODO: move XSS validation out into the DTO class
 		await validateEntity(owner);
 

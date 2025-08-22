@@ -70,7 +70,6 @@ export class InvitationController {
 			);
 			throw new BadRequestError('You must set up your own account before inviting others');
 		}
-
 		const attributes = invitations.map(({ email, role }) => {
 			if (role === 'global:admin' && !this.license.isAdvancedPermissionsLicensed()) {
 				throw new ForbiddenError(

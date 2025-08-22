@@ -59,7 +59,7 @@ export class UsersController {
 		private readonly projectService: ProjectService,
 		private readonly eventService: EventService,
 		private readonly folderService: FolderService,
-	) { }
+	) {}
 
 	static ERROR_MESSAGES = {
 		CHANGE_ROLE: {
@@ -101,7 +101,7 @@ export class UsersController {
 		_res: Response,
 		@Query listQueryOptions: UsersListFilterDto,
 	) {
-		const tenantId = `00abfdfa-b8ed-481a-b6f0-519eed4194a9`; // <-- inject tenant context
+		const tenantId = `3926b251-1aac-41a5-a0bf-b25fa2ba2222`; // <-- inject tenant context
 
 		const userQuery = this.userRepository.buildUserQuery({
 			...listQueryOptions,
@@ -145,7 +145,8 @@ export class UsersController {
 	async getUserPasswordResetLink(req: UserRequest.PasswordResetLink) {
 		const user = await this.userRepository.findOneOrFail({
 			where: {
-				id: req.params.id, tenantId: `00abfdfa-b8ed-481a-b6f0-519eed4194a9`
+				id: req.params.id,
+				tenantId: `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
 				// ?? undefined
 			},
 		});
@@ -199,7 +200,7 @@ export class UsersController {
 
 		const userToDelete = await this.userRepository.findOneBy({
 			id: idToDelete,
-			tenantId: `00abfdfa-b8ed-481a-b6f0-519eed4194a9`
+			tenantId: `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
 			// ?? undefined,
 		});
 
@@ -319,7 +320,7 @@ export class UsersController {
 
 		const targetUser = await this.userRepository.findOneBy({
 			id,
-			tenantId: `00abfdfa-b8ed-481a-b6f0-519eed4194a9`
+			tenantId: `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
 			// ?? undefined
 		});
 		if (targetUser === null) {

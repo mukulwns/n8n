@@ -96,7 +96,10 @@ export class Column {
 		this.isNullable = false;
 		return this;
 	}
-
+	get nullable() {
+		this.isNullable = true;
+		return this;
+	}
 	default(value: unknown) {
 		this.defaultValue = value;
 		return this;

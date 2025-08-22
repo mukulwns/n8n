@@ -12,7 +12,6 @@ export class UserRepository extends Repository<User> {
 		super(User, dataSource.manager);
 	}
 
-
 	async findManyByIds(userIds: string[]) {
 		return await this.find({
 			where: { id: In(userIds) },
@@ -89,16 +88,23 @@ export class UserRepository extends Repository<User> {
 	async createUserWithProject(
 		user: DeepPartial<User>,
 		transactionManager?: EntityManager,
+		tenantId?: string,
 	): Promise<{ user: User; project: Project }> {
 		const createInner = async (entityManager: EntityManager) => {
-			const newUser = entityManager.create(User, user);
+			const newUser = entityManager.create(User, {
+				...user,
+				tenantId,
+			});
 			const savedUser = await entityManager.save<User>(newUser);
+
 			const savedProject = await entityManager.save<Project>(
 				entityManager.create(Project, {
 					type: 'personal',
 					name: savedUser.createPersonalProjectName(),
+					tenantId,
 				}),
 			);
+
 			await entityManager.save<ProjectRelation>(
 				entityManager.create(ProjectRelation, {
 					projectId: savedProject.id,
@@ -106,13 +112,13 @@ export class UserRepository extends Repository<User> {
 					role: 'project:personalOwner',
 				}),
 			);
+
 			return { user: savedUser, project: savedProject };
 		};
+
 		if (transactionManager) {
 			return await createInner(transactionManager);
 		}
-		// TODO: use a transactions
-		// This is blocked by TypeORM having concurrency issues with transactions
 		return await createInner(this.manager);
 	}
 

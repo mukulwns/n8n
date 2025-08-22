@@ -26,7 +26,7 @@ export class UserService {
 		private readonly urlService: UrlService,
 		private readonly eventService: EventService,
 		private readonly publicApiKeyService: PublicApiKeyService,
-	) { }
+	) {}
 
 	async update(userId: string, data: Partial<User>) {
 		const user = await this.userRepository.findOneBy({ id: userId });
@@ -104,7 +104,6 @@ export class UserService {
 
 		invitee.inviteAcceptUrl = url.toString();
 
-
 		return invitee;
 	}
 
@@ -134,7 +133,9 @@ export class UserService {
 
 		return await Promise.all(
 			Object.entries(toInviteUsers).map(async ([email, id]) => {
-				const inviteAcceptUrl = `${domain}/signup?inviterId=${owner.id}&inviteeId=${id}`;
+				// const inviteAcceptUrl = `${domain}/signup?inviterId=${owner.id}&inviteeId=${id}`;
+				const inviteAcceptUrl = `${domain}/signup?inviterId=${owner.id}&inviteeId=${id}&tenantId=${owner.tenantId}`;
+
 				const invitedUser: UserRequest.InviteResponse = {
 					user: {
 						id,
@@ -217,6 +218,7 @@ export class UserService {
 							const { user: savedUser } = await this.userRepository.createUserWithProject(
 								{ email, role },
 								transactionManager,
+								owner.tenantId ?? '3926b251-1aac-41a5-a0bf-b25fa2ba2222',
 							);
 							createdUsers.set(email, savedUser.id);
 							return savedUser;

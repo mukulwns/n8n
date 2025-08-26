@@ -101,13 +101,10 @@ export class UsersController {
 		_res: Response,
 		@Query listQueryOptions: UsersListFilterDto,
 	) {
-		const tenantId = `3926b251-1aac-41a5-a0bf-b25fa2ba2222`; // <-- inject tenant context
-
 		const userQuery = this.userRepository.buildUserQuery({
 			...listQueryOptions,
 			where: {
 				...listQueryOptions.filter,
-				tenantId, //  enforce tenant scope
 			},
 		});
 

@@ -168,6 +168,13 @@ export class UserRepository extends Repository<User> {
 		queryBuilder: SelectQueryBuilder<User>,
 		filter: UsersListFilterDto['filter'],
 	): SelectQueryBuilder<User> {
+		// add tenant id filter here
+		if (filter?.tenantId !== undefined) {
+			queryBuilder.andWhere('user.tenantId = :tenantId', {
+				tenantId: filter.tenantId,
+			});
+		}
+
 		if (filter?.email !== undefined) {
 			queryBuilder.andWhere('user.email = :email', {
 				email: filter.email,

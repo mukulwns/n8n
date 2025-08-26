@@ -216,9 +216,12 @@ export class UserService {
 					await Promise.all(
 						toCreateUsers.map(async ({ email, role }) => {
 							const { user: savedUser } = await this.userRepository.createUserWithProject(
-								{ email, role },
+								{
+									email,
+									role,
+									tenantId: owner.tenantId,
+								},
 								transactionManager,
-								owner.tenantId ?? '3926b251-1aac-41a5-a0bf-b25fa2ba2222',
 							);
 							createdUsers.set(email, savedUser.id);
 							return savedUser;

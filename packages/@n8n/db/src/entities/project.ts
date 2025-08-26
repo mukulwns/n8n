@@ -30,7 +30,7 @@ export class Project extends WithTimestampsAndStringId {
 	@OneToMany('SharedWorkflow', 'project')
 	sharedWorkflows: SharedWorkflow[];
 	@Column({ name: 'tenant_id', type: 'uuid', nullable: true })
-	tenantId: string;
+	tenantId: string | null;
 
 	@ManyToOne(
 		() => Tenant,

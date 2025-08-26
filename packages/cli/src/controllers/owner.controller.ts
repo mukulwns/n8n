@@ -1,6 +1,11 @@
 import { DismissBannerRequestDto, OwnerSetupRequestDto } from '@n8n/api-types';
 import { Logger } from '@n8n/backend-common';
-import { AuthenticatedRequest, SettingsRepository, UserRepository } from '@n8n/db';
+import {
+	AuthenticatedRequest,
+	SettingsRepository,
+	TenantRepository,
+	UserRepository,
+} from '@n8n/db';
 import { Body, GlobalScope, Post, RestController } from '@n8n/decorators';
 import { Response } from 'express';
 
@@ -26,6 +31,7 @@ export class OwnerController {
 		private readonly passwordUtility: PasswordUtility,
 		private readonly postHog: PostHogClient,
 		private readonly userRepository: UserRepository,
+		private readonly tenantRepository: TenantRepository,
 	) {}
 
 	/**
@@ -34,7 +40,25 @@ export class OwnerController {
 	 */
 	@Post('/setup', { skipAuth: true })
 	async setupOwner(req: AuthenticatedRequest, res: Response, @Body payload: OwnerSetupRequestDto) {
-		const { email, firstName, lastName, password } = payload;
+		console.log(payload);
+		const { email, firstName, lastName, password, businessName, businessDomain } = payload;
+
+		// first register the tenant
+		const tenantData: {
+			name: string;
+			domain: string;
+			plan: string;
+			isActive: boolean;
+		} = {
+			name: businessName,
+			domain: businessDomain,
+			plan: 'free',
+			isActive: true,
+		};
+
+		const tenant = this.tenantRepository.create(tenantData);
+
+		await this.tenantRepository.save(tenant);
 
 		if (config.getEnv('userManagement.isInstanceOwnerSetUp')) {
 			this.logger.debug(
@@ -50,7 +74,7 @@ export class OwnerController {
 		owner.firstName = firstName;
 		owner.lastName = lastName;
 		owner.password = await this.passwordUtility.hash(password);
-		owner.tenantId = '3926b251-1aac-41a5-a0bf-b25fa2ba2222';
+		owner.tenantId = tenant.id; // add newly created tenant id into the user record
 		// TODO: move XSS validation out into the DTO class
 		await validateEntity(owner);
 

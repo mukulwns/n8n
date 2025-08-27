@@ -1,6 +1,11 @@
 import { DismissBannerRequestDto, OwnerSetupRequestDto } from '@n8n/api-types';
 import { Logger } from '@n8n/backend-common';
-import { AuthenticatedRequest, SettingsRepository, UserRepository } from '@n8n/db';
+import {
+	AuthenticatedRequest,
+	SettingsRepository,
+	TenantRepository,
+	UserRepository,
+} from '@n8n/db';
 import { Body, GlobalScope, Post, RestController } from '@n8n/decorators';
 import { Response } from 'express';
 
@@ -26,54 +31,86 @@ export class OwnerController {
 		private readonly passwordUtility: PasswordUtility,
 		private readonly postHog: PostHogClient,
 		private readonly userRepository: UserRepository,
+		private readonly tenantRepository: TenantRepository,
 	) {}
 
 	/**
 	 * Promote a shell into the owner of the n8n instance,
 	 * and enable `isInstanceOwnerSetUp` setting.
 	 */
+	// @Post('/setup', { skipAuth: true })
+	// async setupOwner(req: AuthenticatedRequest, res: Response, @Body payload: OwnerSetupRequestDto) {
+	// 	const { email, firstName, lastName, password } = payload;
+
+	// 	if (config.getEnv('userManagement.isInstanceOwnerSetUp')) {
+	// 		this.logger.debug(
+	// 			'Request to claim instance ownership failed because instance owner already exists',
+	// 		);
+	// 		throw new BadRequestError('Instance owner already setup');
+	// 	}
+
+	// 	let owner = await this.userRepository.findOneOrFail({
+	// 		where: { role: 'global:owner' },
+	// 	});
+	// 	owner.email = email;
+	// 	owner.firstName = firstName;
+	// 	owner.lastName = lastName;
+	// 	owner.password = await this.passwordUtility.hash(password);
+	// 	owner.tenantId = '3926b251-1aac-41a5-a0bf-b25fa2ba2222';
+	// 	// TODO: move XSS validation out into the DTO class
+	// 	await validateEntity(owner);
+
+	// 	owner = await this.userRepository.save(owner, { transaction: false });
+
+	// 	this.logger.info('Owner was set up successfully');
+
+	// 	await this.settingsRepository.update(
+	// 		{ key: 'userManagement.isInstanceOwnerSetUp' },
+	// 		{ value: JSON.stringify(true) },
+	// 	);
+
+	// 	config.set('userManagement.isInstanceOwnerSetUp', true);
+
+	// 	this.logger.debug('Setting isInstanceOwnerSetUp updated successfully');
+
+	// 	this.authService.issueCookie(res, owner, req.authInfo?.usedMfa ?? false, req.browserId);
+
+	// 	this.eventService.emit('instance-owner-setup', { userId: owner.id });
+
+	// 	return await this.userService.toPublic(owner, { posthog: this.postHog, withScopes: true });
+	// }
 	@Post('/setup', { skipAuth: true })
 	async setupOwner(req: AuthenticatedRequest, res: Response, @Body payload: OwnerSetupRequestDto) {
-		const { email, firstName, lastName, password } = payload;
+		const { email, firstName, lastName, password, businessName } = payload;
 
-		if (config.getEnv('userManagement.isInstanceOwnerSetUp')) {
-			this.logger.debug(
-				'Request to claim instance ownership failed because instance owner already exists',
-			);
-			throw new BadRequestError('Instance owner already setup');
-		}
+		// 1. Create tenant
+		const tenant = this.tenantRepository.create({ name: businessName });
+		await this.tenantRepository.save(tenant);
 
-		let owner = await this.userRepository.findOneOrFail({
-			where: { role: 'global:owner' },
+		// 2. Create owner
+		let owner = this.userRepository.create({
+			email,
+			firstName,
+			lastName,
+			password: await this.passwordUtility.hash(password),
+			role: 'global:owner',
+			tenantId: tenant.id,
 		});
-		owner.email = email;
-		owner.firstName = firstName;
-		owner.lastName = lastName;
-		owner.password = await this.passwordUtility.hash(password);
-		owner.tenantId = '3926b251-1aac-41a5-a0bf-b25fa2ba2222';
-		// TODO: move XSS validation out into the DTO class
+
 		await validateEntity(owner);
+		owner = await this.userRepository.save(owner);
 
-		owner = await this.userRepository.save(owner, { transaction: false });
-
-		this.logger.info('Owner was set up successfully');
-
-		await this.settingsRepository.update(
-			{ key: 'userManagement.isInstanceOwnerSetUp' },
-			{ value: JSON.stringify(true) },
-		);
-
-		config.set('userManagement.isInstanceOwnerSetUp', true);
-
-		this.logger.debug('Setting isInstanceOwnerSetUp updated successfully');
-
+		// 3. Issue login cookie
 		this.authService.issueCookie(res, owner, req.authInfo?.usedMfa ?? false, req.browserId);
 
-		this.eventService.emit('instance-owner-setup', { userId: owner.id });
+		this.eventService.emit('tenant-owner-setup', { userId: owner.id, tenantId: tenant.id });
 
-		return await this.userService.toPublic(owner, { posthog: this.postHog, withScopes: true });
+		// 4. Return public user + tenantId
+		return {
+			...(await this.userService.toPublic(owner, { posthog: this.postHog, withScopes: true })),
+			tenantId: tenant.id,
+		};
 	}
-
 	@Post('/dismiss-banner')
 	@GlobalScope('banner:dismiss')
 	async dismissBanner(

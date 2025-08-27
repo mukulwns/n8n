@@ -27,6 +27,7 @@ interface AuthJwtPayload {
 	browserId?: string;
 	/** This indicates if mfa was used during the creation of this token */
 	usedMfa?: boolean;
+	tenantId?: string;
 }
 
 interface IssuedJWT extends AuthJwtPayload {
@@ -156,6 +157,7 @@ export class AuthService {
 			hash: this.createJWTHash(user),
 			browserId: browserId && this.hash(browserId),
 			usedMfa,
+			tenantId: user.tenantId || 'default', // Add this line
 		};
 		return this.jwtService.sign(payload, {
 			expiresIn: this.jwtExpiration,
@@ -170,7 +172,7 @@ export class AuthService {
 		const jwtPayload: IssuedJWT = this.jwtService.verify(token, {
 			algorithms: ['HS256'],
 		});
-
+		req.tenantId = jwtPayload.tenantId; // Add this line
 		// TODO: Use an in-memory ttl-cache to cache the User object for upto a minute
 		const user = await this.userRepository.findOne({
 			where: { id: jwtPayload.id },

@@ -1,16 +1,14 @@
+// packages/@n8n/db/src/entities/Settings.ts
 import { Column, Entity, PrimaryColumn } from '@n8n/typeorm';
-import type { IDataObject } from 'n8n-workflow';
-
-interface ISettingsDb {
-	key: string;
-	value: string | boolean | IDataObject | number;
-	loadOnStartup: boolean;
-}
 
 @Entity()
-export class Settings implements ISettingsDb {
+export class Settings {
 	@PrimaryColumn()
 	key: string;
+
+	// NEW: scope settings per tenant (null = global)
+	@Column({ name: 'tenant_id', nullable: true })
+	tenantId?: string;
 
 	@Column()
 	value: string;

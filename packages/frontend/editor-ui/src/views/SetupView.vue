@@ -69,6 +69,16 @@ const formConfig: IFormBoxConfig = reactive({
 			},
 		},
 		{
+			name: 'businessName',
+			properties: {
+				label: locale.baseText('auth.businessName'), // Add label for business name
+				maxlength: 64, // Max length for business name
+				required: true, // Set to true if you want it to be a required field
+				autocomplete: 'organization',
+				capitalize: true,
+			},
+		},
+		{
 			name: 'agree',
 			properties: {
 				label: locale.baseText('auth.agreement.label'),
@@ -83,13 +93,19 @@ const onSubmit = async (values: { [key: string]: string | boolean }) => {
 		const forceRedirectedHere = settingsStore.showSetupPage;
 		loading.value = true;
 		await usersStore.createOwner(
-			values as { firstName: string; lastName: string; email: string; password: string },
+			values as {
+				firstName: string;
+				lastName: string;
+				email: string;
+				password: string;
+				businessName: string;
+			},
 		);
 
 		if (values.agree === true) {
 			try {
 				await usersStore.submitContactEmail(values.email.toString(), values.agree);
-			} catch { }
+			} catch {}
 		}
 		if (forceRedirectedHere) {
 			await router.push({ name: VIEWS.HOMEPAGE });
@@ -104,5 +120,10 @@ const onSubmit = async (values: { [key: string]: string | boolean }) => {
 </script>
 
 <template>
-	<AuthView :form="formConfig" :form-loading="loading" data-test-id="setup-form" @submit="onSubmit" />
+	<AuthView
+		:form="formConfig"
+		:form-loading="loading"
+		data-test-id="setup-form"
+		@submit="onSubmit"
+	/>
 </template>

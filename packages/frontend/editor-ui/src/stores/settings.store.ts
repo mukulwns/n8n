@@ -28,7 +28,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const moduleSettings = ref<FrontendModuleSettings>({});
 	const userManagement = ref<IUserManagementSettings>({
 		quota: -1,
-		showSetupOnFirstLoad: false,
+		showSetupOnFirstLoad: true,
 		smtpSetup: false,
 		authenticationMethod: UserManagementAuthenticationMethod.Email,
 	});
@@ -188,8 +188,8 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		settings.value = newSettings;
 		userManagement.value = newSettings.userManagement;
 		if (userManagement.value) {
-			userManagement.value.showSetupOnFirstLoad =
-				!!settings.value.userManagement.showSetupOnFirstLoad;
+			userManagement.value.showSetupOnFirstLoad = true;
+			// !!settings.value.userManagement.showSetupOnFirstLoad;
 		}
 		api.value = settings.value.publicApi;
 		mfa.value.enabled = settings.value.mfa?.enabled;
@@ -234,6 +234,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const getSettings = async () => {
 		const rootStore = useRootStore();
 		const fetchedSettings = await settingsApi.getSettings(rootStore.restApiContext);
+		console.log(fetchedSettings, 'fect', rootStore.restApiContext, 'fect2');
 		setSettings(fetchedSettings);
 		settings.value.communityNodesEnabled = fetchedSettings.communityNodesEnabled;
 		settings.value.unverifiedCommunityNodesEnabled =
@@ -281,7 +282,8 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	};
 
 	const stopShowingSetupPage = () => {
-		userManagement.value.showSetupOnFirstLoad = false;
+		// userManagement.value.showSetupOnFirstLoad = false;
+		userManagement.value.showSetupOnFirstLoad = true;
 	};
 
 	const disableTemplates = () => {

@@ -115,6 +115,7 @@ export interface PublicUser {
 	featureFlags?: FeatureFlags; // External type from n8n-workflow
 	lastActiveAt?: Date | null;
 	mfaAuthenticated?: boolean;
+	tenantId?: string | null; // Add this line
 }
 
 export type UserSettings = Pick<User, 'id' | 'settings'>;
@@ -365,6 +366,7 @@ export type APIRequest<
 	RequestQuery = {},
 > = express.Request<RouteParams, ResponseBody, RequestBody, RequestQuery> & {
 	browserId?: string;
+	tenantId?: string;
 };
 
 export type AuthenticationInformation = {

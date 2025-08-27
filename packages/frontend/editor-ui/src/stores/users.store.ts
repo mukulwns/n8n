@@ -174,7 +174,7 @@ export const useUsersStore = defineStore(STORES.USERS, () => {
 		try {
 			await loginWithCookie();
 			initialized.value = true;
-		} catch (e) { }
+		} catch (e) {}
 	};
 
 	const unsetCurrentUser = () => {
@@ -238,6 +238,7 @@ export const useUsersStore = defineStore(STORES.USERS, () => {
 		lastName: string;
 		email: string;
 		password: string;
+		businessName: string;
 	}) => {
 		const user = await usersApi.setupOwner(rootStore.restApiContext, params);
 		if (user) {

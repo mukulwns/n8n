@@ -103,7 +103,13 @@ export async function logout(context: IRestApiContext): Promise<void> {
 
 export async function setupOwner(
 	context: IRestApiContext,
-	params: { firstName: string; lastName: string; email: string; password: string },
+	params: {
+		firstName: string;
+		lastName: string;
+		email: string;
+		password: string;
+		businessName: string;
+	},
 ): Promise<CurrentUserResponse> {
 	return await makeRestApiRequest(
 		context,

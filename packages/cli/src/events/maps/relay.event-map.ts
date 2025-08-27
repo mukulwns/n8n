@@ -34,7 +34,10 @@ export type RelayEventMap = {
 	'instance-owner-setup': {
 		userId: string;
 	};
-
+	'tenant-owner-setup': {
+		userId: string;
+		tenantId: string;
+	};
 	'first-production-workflow-succeeded': {
 		projectId: string;
 		workflowId: string;

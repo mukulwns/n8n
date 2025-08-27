@@ -154,6 +154,7 @@
 	"auth.lastName": "Last Name",
 	"auth.newPassword": "New password",
 	"auth.password": "Password",
+	"auth.businessName": "Business Name",
 	"auth.role": "Role",
 	"auth.roles.default": "Default",
 	"auth.roles.member": "Member",
@@ -2870,7 +2871,6 @@
 	"settings.ldap.confirmMessage.beforeSaveForm.confirmButtonText": "Yes, disable it",
 	"settings.ldap.confirmMessage.beforeSaveForm.headline": "Are you sure you want to disable LDAP login?",
 	"settings.ldap.confirmMessage.beforeSaveForm.message": "If you do so, all LDAP users will be converted to email users.",
-
 	"settings.ldap.disabled.title": "Available on the Enterprise plan",
 	"settings.ldap.disabled.description": "LDAP is available as a paid feature. Learn more about it.",
 	"settings.ldap.disabled.buttonText": "See plans",

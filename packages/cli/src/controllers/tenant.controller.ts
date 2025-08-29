@@ -1,27 +1,37 @@
-import { RestController, Get, Post, Patch, Delete, Body, Param, GlobalScope } from '@n8n/decorators';
+import {
+	RestController,
+	Get,
+	Post,
+	Patch,
+	Delete,
+	Body,
+	Param,
+	GlobalScope,
+} from '@n8n/decorators';
 import { AuthenticatedRequest, TenantRepository } from '@n8n/db';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { CreateTenantDto } from '@n8n/api-types';
 
 @RestController('/tenants')
 export class TenantController {
-	constructor(private readonly tenantRepository: TenantRepository) { }
+	constructor(private readonly tenantRepository: TenantRepository) {}
 
-	@Get('/', { skipAuth: true })
-	// @GlobalScope('tenant:list')
+	@Get('/')
+	@GlobalScope('tenant:list')
 	async listTenants() {
 		return await this.tenantRepository.find();
 	}
 
 	@Get('/:id', { skipAuth: true })
-	// @GlobalScope('tenant:view')
+	@GlobalScope('tenant:read')
 	async getTenant(@Param('id') id: string) {
 		const tenant = await this.tenantRepository.findOne({ where: { id } });
 		if (!tenant) throw new NotFoundError('Tenant not found');
 		return tenant;
 	}
 
-	@Post("/", { skipAuth: true })
+	@Post('/', { skipAuth: true })
+	@GlobalScope('tenant:create')
 	async createTenant(req: AuthenticatedRequest, _res: Response, @Body payload: CreateTenantDto) {
 		console.log('Payload DTO:', payload); // Already parsed body
 		console.log('Payload Name:', payload.name); // Access directly
@@ -33,10 +43,12 @@ export class TenantController {
 		return await this.tenantRepository.save(tenant);
 	}
 
-
 	@Patch('/:id', { skipAuth: true })
-	// @GlobalScope('tenant:update')
-	async updateTenant(@Param('id') id: string, @Body body: Partial<{ name: string; domain?: string }>) {
+	@GlobalScope('tenant:update')
+	async updateTenant(
+		@Param('id') id: string,
+		@Body body: Partial<{ name: string; domain?: string }>,
+	) {
 		await this.tenantRepository.update({ id }, body);
 		const updated = await this.tenantRepository.findOne({ where: { id } });
 		if (!updated) throw new NotFoundError('Tenant not found after update');
@@ -44,7 +56,7 @@ export class TenantController {
 	}
 
 	@Delete('/:id', { skipAuth: true })
-	// @GlobalScope('tenant:delete')
+	@GlobalScope('tenant:delete')
 	async deleteTenant(@Param('id') id: string) {
 		const tenant = await this.tenantRepository.findOne({ where: { id } });
 		if (!tenant) throw new NotFoundError('Tenant not found');

@@ -79,6 +79,10 @@ export const GLOBAL_OWNER_SCOPES: Scope[] = [
 	'insights:list',
 	'folder:move',
 	'oidc:manage',
+	'tenant:list', // tenant end points
+	'tenant:read',
+	'tenant:update',
+	'tenant:delete',
 ];
 
 export const GLOBAL_ADMIN_SCOPES = GLOBAL_OWNER_SCOPES.concat();

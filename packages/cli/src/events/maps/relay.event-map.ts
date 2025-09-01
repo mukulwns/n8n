@@ -374,6 +374,7 @@ export type RelayEventMap = {
 		role: GlobalRole;
 		members: ProjectRelation[];
 		projectId: string;
+		tenantId?: string;
 	};
 
 	'team-project-deleted': {
@@ -382,11 +383,13 @@ export type RelayEventMap = {
 		projectId: string;
 		removalType: 'transfer' | 'delete';
 		targetProjectId?: string;
+		tenantId?: string;
 	};
 
 	'team-project-created': {
 		userId: string;
 		role: GlobalRole;
+		tenantId?: string;
 	};
 
 	// #endregion

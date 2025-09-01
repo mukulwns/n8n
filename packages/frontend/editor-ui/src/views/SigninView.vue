@@ -1,18 +1,14 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-
 import AuthView from './AuthView.vue';
 import MfaView from './MfaView.vue';
-
 import { useToast } from '@/composables/useToast';
 import { useI18n } from '@n8n/i18n';
 import { useTelemetry } from '@/composables/useTelemetry';
-
 import { useUsersStore } from '@/stores/users.store';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useSSOStore } from '@/stores/sso.store';
-
 import type { IFormBoxConfig } from '@/Interface';
 import { MFA_AUTHENTICATION_REQUIRED_ERROR_CODE, VIEWS, MFA_FORM } from '@/constants';
 import type { LoginRequestDto } from '@n8n/api-types';
@@ -27,10 +23,8 @@ export type MfaCodeOrMfaRecoveryCode = Pick<LoginRequestDto, 'mfaCode' | 'mfaRec
 const usersStore = useUsersStore();
 const settingsStore = useSettingsStore();
 const ssoStore = useSSOStore();
-
 const route = useRoute();
 const router = useRouter();
-
 const toast = useToast();
 const locale = useI18n();
 const telemetry = useTelemetry();
@@ -86,6 +80,13 @@ const formConfig: IFormBoxConfig = reactive({
 	],
 });
 
+onMounted(async () => {
+	await settingsStore.getSettings();
+	if (settingsStore.showSetupPage) {
+		await router.push({ name: VIEWS.SIGNUP });
+	}
+});
+
 const onMFASubmitted = async (form: MfaCodeOrMfaRecoveryCode) => {
 	await login({
 		emailOrLdapLoginId: emailOrLdapLoginId.value,
@@ -94,21 +95,29 @@ const onMFASubmitted = async (form: MfaCodeOrMfaRecoveryCode) => {
 		mfaRecoveryCode: form.mfaRecoveryCode,
 	});
 };
+const onBackClick = (fromForm: string) => {
+	reportError.value = false;
+	if (fromForm === MFA_FORM.MFA_TOKEN) {
+		showMfaView.value = false;
+		loading.value = false;
+	}
+};
 
+const onFormChanged = (toForm: string) => {
+	if (toForm === MFA_FORM.MFA_RECOVERY_CODE) {
+		reportError.value = false;
+	}
+};
 const onEmailPasswordSubmitted = async (form: EmailOrLdapLoginIdAndPassword) => {
 	await login(form);
 };
 
 const isRedirectSafe = () => {
 	const redirect = getRedirectQueryParameter();
-
-	// Allow local redirects
 	if (redirect.startsWith('/')) {
 		return true;
 	}
-
 	try {
-		// Only allow origin domain redirects
 		const url = new URL(redirect);
 		return url.origin === window.location.origin;
 	} catch {
@@ -133,7 +142,6 @@ const login = async (form: LoginRequestDto) => {
 			mfaCode: form.mfaCode,
 			mfaRecoveryCode: form.mfaRecoveryCode,
 		});
-		loading.value = false;
 		await settingsStore.getSettings();
 
 		if (settingsStore.activeModules.length > 0) {
@@ -157,7 +165,6 @@ const login = async (form: LoginRequestDto) => {
 				window.location.href = redirect;
 				return;
 			}
-
 			void router.push(redirect);
 			return;
 		}
@@ -181,21 +188,11 @@ const login = async (form: LoginRequestDto) => {
 		}
 
 		reportError.value = true;
-	}
-};
-
-const onBackClick = (fromForm: string) => {
-	reportError.value = false;
-	if (fromForm === MFA_FORM.MFA_TOKEN) {
-		showMfaView.value = false;
+	} finally {
 		loading.value = false;
 	}
 };
-const onFormChanged = (toForm: string) => {
-	if (toForm === MFA_FORM.MFA_RECOVERY_CODE) {
-		reportError.value = false;
-	}
-};
+
 const cacheCredentials = (form: EmailOrLdapLoginIdAndPassword) => {
 	emailOrLdapLoginId.value = form.emailOrLdapLoginId;
 	password.value = form.password;

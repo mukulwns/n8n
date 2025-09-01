@@ -34,15 +34,17 @@ export class TypedEmitter<ListenerMap extends Payloads<ListenerMap>> extends Eve
 	override emit<EventName extends keyof ListenerMap & string>(
 		eventName: EventName,
 		payload?: ListenerMap[EventName],
+		tenantId?: string,
 	): boolean {
-		return super.emit(eventName, payload);
+		return super.emit(eventName, payload, tenantId);
 	}
 
 	protected debouncedEmit = debounce(
 		<EventName extends keyof ListenerMap & string>(
 			eventName: EventName,
 			payload?: ListenerMap[EventName],
-		) => super.emit(eventName, payload),
+			tenantId?: string,
+		) => super.emit(eventName, payload, tenantId),
 		this.debounceWait,
 	);
 }

@@ -2,7 +2,10 @@ import { DismissBannerRequestDto, OwnerSetupRequestDto } from '@n8n/api-types';
 import { Logger } from '@n8n/backend-common';
 import {
 	AuthenticatedRequest,
+	ProjectRelationRepository,
+	ProjectRepository,
 	SettingsRepository,
+	SharedWorkflowRepository,
 	TenantRepository,
 	UserRepository,
 } from '@n8n/db';
@@ -18,6 +21,8 @@ import { PostHogClient } from '@/posthog';
 import { BannerService } from '@/services/banner.service';
 import { PasswordUtility } from '@/services/password.utility';
 import { UserService } from '@/services/user.service';
+import { Container } from '@n8n/di';
+import { ExternalHooks } from '@/external-hooks';
 
 @RestController('/owner')
 export class OwnerController {
@@ -31,7 +36,7 @@ export class OwnerController {
 		private readonly passwordUtility: PasswordUtility,
 		private readonly postHog: PostHogClient,
 		private readonly userRepository: UserRepository,
-		private readonly tenantRepository: TenantRepository,
+		private readonly externalHooks: ExternalHooks,
 	) {}
 
 	/**
@@ -79,37 +84,101 @@ export class OwnerController {
 
 	// 	return await this.userService.toPublic(owner, { posthog: this.postHog, withScopes: true });
 	// }
+	// Tumhara code (already verified)
 	@Post('/setup', { skipAuth: true })
 	async setupOwner(req: AuthenticatedRequest, res: Response, @Body payload: OwnerSetupRequestDto) {
 		const { email, firstName, lastName, password, businessName } = payload;
 
-		// 1. Create tenant
-		const tenant = this.tenantRepository.create({ name: businessName });
-		await this.tenantRepository.save(tenant);
+		if (!email || !firstName || !lastName || !password || !businessName) {
+			this.logger.debug('Request to set up owner failed because of missing fields in payload', {
+				payload,
+			});
+			throw new BadRequestError('Missing fields in payload');
+		}
 
-		// 2. Create owner
-		let owner = this.userRepository.create({
-			email,
-			firstName,
-			lastName,
-			password: await this.passwordUtility.hash(password),
-			role: 'global:owner',
-			tenantId: tenant.id,
+		const tenantRepo = Container.get(TenantRepository);
+		const existingTenant = await tenantRepo.findOne({ where: { name: businessName } });
+		if (existingTenant) {
+			this.logger.debug('Request to set up owner failed because tenant name already exists', {
+				businessName,
+			});
+			throw new BadRequestError('Business name already taken');
+		}
+
+		const existingUser = await this.userRepository.findOne({ where: { email } });
+		if (existingUser) {
+			this.logger.debug('Request to set up owner failed because email already exists', { email });
+			throw new BadRequestError('Email already registered');
+		}
+
+		const tenant = tenantRepo.create({ name: businessName });
+		const savedTenant = await tenantRepo.save(tenant);
+		this.logger.debug('Created tenant', { tenantId: savedTenant.id });
+
+		const userRepo = Container.get(UserRepository);
+		const { user: savedUser, project: savedPersonalProject } = await userRepo.createUserWithProject(
+			{
+				email,
+				firstName,
+				lastName,
+				password: await this.passwordUtility.hash(password),
+				role: 'global:owner',
+			},
+			undefined,
+			savedTenant.id,
+		);
+		this.logger.debug('Created user with personal project', {
+			userId: savedUser.id,
+			projectId: savedPersonalProject.id,
+			tenantId: savedTenant.id,
 		});
 
-		await validateEntity(owner);
-		owner = await this.userRepository.save(owner);
+		const projectRepo = Container.get(ProjectRepository);
+		const teamProject = projectRepo.create({
+			name: `Team Project for ${businessName}`,
+			type: 'team',
+			tenantId: savedTenant.id,
+		});
+		const savedTeamProject = await projectRepo.save(teamProject);
+		this.logger.debug('Created team project', {
+			projectId: savedTeamProject.id,
+			tenantId: savedTenant.id,
+		});
 
-		// 3. Issue login cookie
-		this.authService.issueCookie(res, owner, req.authInfo?.usedMfa ?? false, req.browserId);
+		const projectRelationRepo = Container.get(ProjectRelationRepository);
+		const teamProjectRelation = projectRelationRepo.create({
+			projectId: savedTeamProject.id,
+			userId: savedUser.id,
+			role: 'project:admin',
+			project: savedTeamProject,
+			user: savedUser,
+		});
+		await projectRelationRepo.save(teamProjectRelation);
+		this.logger.debug(
+			`Assigned user ${savedUser.id} as project:admin for team project ${savedTeamProject.id}`,
+		);
 
-		this.eventService.emit('tenant-owner-setup', { userId: owner.id, tenantId: tenant.id });
+		this.authService.issueCookie(res, savedUser, false, req.browserId);
 
-		// 4. Return public user + tenantId
-		return {
-			...(await this.userService.toPublic(owner, { posthog: this.postHog, withScopes: true })),
-			tenantId: tenant.id,
-		};
+		this.eventService.emit('user-signed-up', {
+			user: savedUser,
+			userType: 'email',
+			wasDisabledLdapUser: false,
+		});
+
+		const publicUser = await this.userService.toPublic(savedUser, {
+			posthog: this.postHog,
+			withScopes: true,
+		});
+
+		await this.externalHooks.run('user.created', [publicUser]);
+
+		this.eventService.emit('tenant-owner-setup', {
+			userId: savedUser.id,
+			tenantId: savedTenant.id,
+		});
+
+		return { user: publicUser, tenantId: savedTenant.id };
 	}
 	@Post('/dismiss-banner')
 	@GlobalScope('banner:dismiss')

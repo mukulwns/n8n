@@ -3,7 +3,9 @@ import Logo from '@/components/Logo/Logo.vue';
 import SSOLogin from '@/components/SSOLogin.vue';
 import type { FormFieldValueUpdate, IFormBoxConfig } from '@/Interface';
 import { useSettingsStore } from '@/stores/settings.store';
-import type { EmailOrLdapLoginIdAndPassword } from './SigninView.vue';
+import { useToast } from '@/composables/useToast';
+import { useRouter } from 'vue-router';
+import { VIEWS } from '@/constants';
 
 withDefaults(
 	defineProps<{
@@ -20,25 +22,42 @@ withDefaults(
 
 const emit = defineEmits<{
 	update: [FormFieldValueUpdate];
-	submit: [values: EmailOrLdapLoginIdAndPassword];
+	submit: [values: any];
 	secondaryClick: [];
 }>();
+
+const settingsStore = useSettingsStore();
+const toast = useToast();
+const router = useRouter();
 
 const onUpdate = (e: FormFieldValueUpdate) => {
 	emit('update', e);
 };
 
 const onSubmit = (data: unknown) => {
-	emit('submit', data as EmailOrLdapLoginIdAndPassword);
+	emit('submit', data);
 };
 
 const onSecondaryClick = () => {
 	emit('secondaryClick');
 };
 
+const toggleSetupPage = async () => {
+	try {
+		await settingsStore.toggleShowSetupOnFirstLoad();
+		toast.showMessage({
+			title: 'Success',
+			message: `Setup page ${settingsStore.showSetupPage ? 'enabled' : 'disabled'}`,
+			type: 'success',
+		});
+	} catch (error) {
+		toast.showError(error, 'Error toggling setup page');
+	}
+};
+
 const {
 	settings: { releaseChannel },
-} = useSettingsStore();
+} = settingsStore;
 </script>
 
 <template>
@@ -57,6 +76,15 @@ const {
 				@update="onUpdate"
 			>
 				<SSOLogin v-if="withSso" />
+				<button
+					:disabled="formLoading"
+					@click="router.push({ name: settingsStore.showSetupPage ? VIEWS.SIGNIN : VIEWS.SETUP })"
+				>
+					{{ settingsStore.showSetupPage ? 'Sign In' : 'Setup New Tenant' }}
+				</button>
+				<button :disabled="formLoading" @click="toggleSetupPage">
+					{{ settingsStore.showSetupPage ? 'Disable Setup Page' : 'Enable Setup Page' }}
+				</button>
 			</N8nFormBox>
 		</div>
 	</div>

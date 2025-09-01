@@ -205,11 +205,12 @@ export class RedisClientService extends TypedEmitter<RedisEventMap> {
 	}
 
 	@Debounce(1000)
-	emit<Event extends keyof RedisEventMap>(
-		event: Event,
-		...args: Array<RedisEventMap[Event]>
+	override emit<EventName extends keyof RedisEventMap>(
+		eventName: EventName,
+		payload?: RedisEventMap[EventName],
+		tenantId?: string,
 	): boolean {
-		return super.emit(event, ...args);
+		return super.emit(eventName, payload, tenantId);
 	}
 
 	private registerListeners() {

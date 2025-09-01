@@ -188,12 +188,22 @@ export class ProjectService {
 		return await this.sharedWorkflowRepository.findProjectIds(workflowId);
 	}
 
-	async getAccessibleProjects(user: User): Promise<Project[]> {
-		// This user is probably an admin, show them everything
-		if (hasGlobalScope(user, 'project:read')) {
-			return await this.projectRepository.find();
+	async getAccessibleProjects(user: User, tenantId: string): Promise<Project[]> {
+		if (!tenantId) {
+			// this.logger.debug('Tenant ID missing in getAccessibleProjects');
+			throw new BadRequestError('Tenant ID missing');
 		}
-		return await this.projectRepository.getAccessibleProjects(user.id);
+		// This user is probably an admin, show them everything
+		// Admins with global project:read scope see all projects for the tenant
+		if (hasGlobalScope(user, 'project:read')) {
+			const projects = await this.projectRepository.find({
+				where: { tenantId },
+			});
+			// this.logger.debug('Retrieved all projects for admin', { userId: user.id, tenantId, count: projects.length });
+			return projects;
+		}
+		// Regular users see only their accessible projects for the tenant
+		return await this.projectRepository.getAccessibleProjects(user.id, tenantId);
 	}
 
 	async getPersonalProjectOwners(projectIds: string[]): Promise<ProjectRelation[]> {
@@ -255,15 +265,18 @@ export class ProjectService {
 		}
 	}
 
-	async getPersonalProject(user: User): Promise<Project | null> {
+	async getPersonalProject(user: User, tenantId: string): Promise<Project | null> {
 		return await this.projectRepository.getPersonalProjectForUser(user.id);
 	}
 
 	async getProjectRelationsForUser(user: User): Promise<ProjectRelation[]> {
-		return await this.projectRelationRepository.find({
-			where: { userId: user.id },
+		const relations = await this.projectRelationRepository.find({
+			where: {
+				userId: user.id,
+			},
 			relations: ['project'],
 		});
+		return relations;
 	}
 
 	async syncProjectRelations(
@@ -443,7 +456,7 @@ export class ProjectService {
 		});
 	}
 
-	async getProject(projectId: string): Promise<Project> {
+	async getProject(projectId: string, tenantId?: string): Promise<Project> {
 		return await this.projectRepository.findOneOrFail({
 			where: {
 				id: projectId,
@@ -469,7 +482,7 @@ export class ProjectService {
 		});
 	}
 
-	async getProjectCounts(): Promise<Record<ProjectType, number>> {
+	async getProjectCounts(tenantId: string): Promise<Record<ProjectType, number>> {
 		return await this.projectRepository.getProjectCounts();
 	}
 }

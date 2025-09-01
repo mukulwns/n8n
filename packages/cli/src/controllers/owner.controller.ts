@@ -57,6 +57,9 @@ export class OwnerController {
 		};
 
 		const tenant = this.tenantRepository.create(tenantData);
+		if (!tenant) {
+			throw new BadRequestError('Error while creating the tenant');
+		}
 
 		await this.tenantRepository.save(tenant);
 

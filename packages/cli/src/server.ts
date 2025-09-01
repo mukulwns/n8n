@@ -226,6 +226,7 @@ export class Server extends AbstractServer {
 		// Extract BrowserId from headers
 		this.app.use((req: APIRequest, _, next) => {
 			req.browserId = req.headers['browser-id'] as string;
+			req.tenantId = (req.headers['x-tenant-id'] as string) ?? undefined; // <— important
 			next();
 		});
 
@@ -276,9 +277,11 @@ export class Server extends AbstractServer {
 
 		if (frontendService) {
 			// Returns the current settings for the UI
-			this.app.get(
-				`/${this.restEndpoint}/settings`,
-				ResponseHelper.send(async () => frontendService.getSettings()),
+			this.app.get(`/${this.restEndpoint}/settings`, (req, res) =>
+				ResponseHelper.send(async () => frontendService.getSettingsForRequest(req as APIRequest))(
+					req,
+					res,
+				),
 			);
 
 			// Returns settings for all loaded modules
@@ -361,7 +364,7 @@ export class Server extends AbstractServer {
 						try {
 							await fsAccess(filePath);
 							return res.sendFile(filePath, { maxAge, dotfiles: 'allow' });
-						} catch { }
+						} catch {}
 					}
 					res.sendStatus(404);
 				},
@@ -380,7 +383,7 @@ export class Server extends AbstractServer {
 					try {
 						await fsAccess(filePath);
 						return res.sendFile(filePath, { ...cacheOptions, dotfiles: 'allow' });
-					} catch { }
+					} catch {}
 				}
 				res.sendStatus(404);
 			};
@@ -400,12 +403,12 @@ export class Server extends AbstractServer {
 				contentSecurityPolicy: isEmpty(cspDirectives)
 					? false
 					: {
-						useDefaults: false,
-						reportOnly: cspReportOnly,
-						directives: {
-							...cspDirectives,
+							useDefaults: false,
+							reportOnly: cspReportOnly,
+							directives: {
+								...cspDirectives,
+							},
 						},
-					},
 				xFrameOptions:
 					isPreviewMode || inE2ETests || inDevelopment ? false : { action: 'sameorigin' },
 				dnsPrefetchControl: false,
@@ -417,10 +420,10 @@ export class Server extends AbstractServer {
 				// if n8n is behind a reverse-proxy, then these headers needs to be configured there
 				strictTransportSecurity: isTLSEnabled
 					? {
-						maxAge: 180 * Time.days.toSeconds,
-						includeSubDomains: false,
-						preload: false,
-					}
+							maxAge: 180 * Time.days.toSeconds,
+							includeSubDomains: false,
+							preload: false,
+						}
 					: false,
 			});
 

@@ -31,6 +31,7 @@ import {
 } from '@/workflows/workflow-history.ee/workflow-history-helper.ee';
 
 import { UrlService } from './url.service';
+import { APIRequest, UserRepository } from '@n8n/db';
 
 @Service()
 export class FrontendService {
@@ -160,7 +161,8 @@ export class FrontendService {
 			defaultLocale: this.globalConfig.defaultLocale,
 			userManagement: {
 				quota: this.license.getUsersLimit(),
-				showSetupOnFirstLoad: !config.getEnv('userManagement.isInstanceOwnerSetUp'),
+				// showSetupOnFirstLoad: !config.getEnv('userManagement.isInstanceOwnerSetUp'),
+				showSetupOnFirstLoad: true,
 				smtpSetup: this.mailer.isEmailSetUp,
 				authenticationMethod: getCurrentAuthenticationMethod(),
 			},
@@ -309,7 +311,8 @@ export class FrontendService {
 		Object.assign(this.settings.userManagement, {
 			quota: this.license.getUsersLimit(),
 			authenticationMethod: getCurrentAuthenticationMethod(),
-			showSetupOnFirstLoad: !config.getEnv('userManagement.isInstanceOwnerSetUp'),
+			// showSetupOnFirstLoad: !config.getEnv('userManagement.isInstanceOwnerSetUp'),
+			showSetupOnFirstLoad: true,
 		});
 
 		let dismissedBanners: string[] = [];
@@ -430,6 +433,69 @@ export class FrontendService {
 		return this.settings;
 	}
 
+	// factor the dynamic refresh you added into a helper
+	private refreshDynamicSettings(base: FrontendSettings) {
+		const restEndpoint = this.globalConfig.endpoints.rest;
+
+		// Update URLs in case tunnel changed
+		const instanceBaseUrl = this.urlService.getInstanceBaseUrl();
+		base.urlBaseWebhook = this.urlService.getWebhookBaseUrl();
+		base.urlBaseEditor = instanceBaseUrl;
+		base.oauthCallbackUrls = {
+			oauth1: `${instanceBaseUrl}/${restEndpoint}/oauth1-credential/callback`,
+			oauth2: `${instanceBaseUrl}/${restEndpoint}/oauth2-credential/callback`,
+		};
+
+		// refresh user management status
+		Object.assign(base.userManagement, {
+			quota: this.license.getUsersLimit(),
+			authenticationMethod: getCurrentAuthenticationMethod(),
+			// NOTE: leave showSetupOnFirstLoad to be decided per-tenant in getSettingsForRequest
+			showSetupOnFirstLoad: !config.getEnv('userManagement.isInstanceOwnerSetUp'),
+		});
+
+		// ... keep the rest of your dynamic updates here ...
+		// (banners, ai flags, mfa, executionMode, variables limit, enterprise flags, etc.)
+	}
+	async getSettingsForRequest(req: APIRequest): Promise<FrontendSettings> {
+		// Clone a fresh copy so we don't mutate the cached object
+		const base = structuredClone(this.getSettings());
+
+		// Always refresh dynamic bits
+		this.refreshDynamicSettings(base);
+
+		const logger = Container.get(Logger);
+
+		// If no tenantId, check for global owner (legacy behavior)
+		if (!req.tenantId) {
+			logger.debug('No tenantId in request, checking global owner');
+			const userRepo = Container.get(UserRepository);
+			const hasGlobalOwner = await userRepo.exists({ where: { role: 'global:owner' } });
+			base.userManagement.showSetupOnFirstLoad = !hasGlobalOwner;
+			logger.debug(
+				`Global owner exists: ${hasGlobalOwner}, showSetupOnFirstLoad: ${base.userManagement.showSetupOnFirstLoad}`,
+			);
+			return base;
+		}
+
+		// Tenant-aware: Check if tenant has a project with an owner (project:admin)
+		// logger.debug(`Checking tenant owner for tenantId: ${req.tenantId}`);
+		// const projectRepo = Container.get(ProjectRepository);
+		// const hasOwner = await projectRepo.exists({
+		// 	where: {
+		// 		tenantId: req.tenantId,
+		// 		// shared: { role: 'project:admin' }, // Check for project:admin role
+		// 	},
+		// 	// relations: ['shared'], // Include shared_workflow relation
+		// });
+
+		// base.userManagement.showSetupOnFirstLoad = !hasOwner;
+		base.userManagement.showSetupOnFirstLoad = false;
+
+		// logger.debug(`Tenant owner exists: ${hasOwner}, showSetupOnFirstLoad: ${base.userManagement.showSetupOnFirstLoad}`);
+
+		return base;
+	}
 	getModuleSettings() {
 		return Object.fromEntries(this.moduleRegistry.settings);
 	}

@@ -22,7 +22,7 @@ export const defaultSettings: FrontendSettings = {
 	endpointWebhookTest: '',
 	endpointWebhookWaiting: '',
 	enterprise: {
-		sharing: false,
+		sharing: true,
 		ldap: false,
 		oidc: false,
 		saml: false,
@@ -38,12 +38,12 @@ export const defaultSettings: FrontendSettings = {
 		binaryDataS3: false,
 		externalSecrets: false,
 		workerView: false,
-		advancedPermissions: false,
+		advancedPermissions: true,
 		apiKeyScopes: false,
 		workflowDiffs: false,
 		projects: {
 			team: {
-				limit: 1,
+				limit: -1,
 			},
 		},
 	},
@@ -91,10 +91,10 @@ export const defaultSettings: FrontendSettings = {
 	urlBaseEditor: '',
 	urlBaseWebhook: '',
 	authCookie: {
-		secure: false,
+		secure: true,
 	},
 	userManagement: {
-		showSetupOnFirstLoad: false,
+		showSetupOnFirstLoad: true,
 		smtpSetup: true,
 		authenticationMethod: 'email',
 		quota: 10,

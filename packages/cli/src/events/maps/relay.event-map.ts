@@ -34,7 +34,10 @@ export type RelayEventMap = {
 	'instance-owner-setup': {
 		userId: string;
 	};
-
+	'tenant-owner-setup': {
+		userId: string;
+		tenantId: string;
+	};
 	'first-production-workflow-succeeded': {
 		projectId: string;
 		workflowId: string;
@@ -371,6 +374,7 @@ export type RelayEventMap = {
 		role: GlobalRole;
 		members: ProjectRelation[];
 		projectId: string;
+		tenantId?: string;
 	};
 
 	'team-project-deleted': {
@@ -379,11 +383,13 @@ export type RelayEventMap = {
 		projectId: string;
 		removalType: 'transfer' | 'delete';
 		targetProjectId?: string;
+		tenantId?: string;
 	};
 
 	'team-project-created': {
 		userId: string;
 		role: GlobalRole;
+		tenantId?: string;
 	};
 
 	// #endregion

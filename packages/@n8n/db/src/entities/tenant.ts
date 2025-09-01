@@ -13,7 +13,8 @@ export class Tenant {
 
 	@Column({ type: 'varchar', length: 255, nullable: true })
 	domain: string | null;
-
+	@Column({ type: 'boolean', default: true })
+	showSetupOnFirstLoad: boolean;
 	@OneToMany(
 		() => User,
 		(user) => user.tenant,

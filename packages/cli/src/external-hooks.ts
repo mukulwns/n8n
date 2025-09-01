@@ -63,7 +63,7 @@ type ExternalHooksMap = {
 	'user.profile.update': [currentEmail: string, publicUser: PublicUser];
 	'user.password.update': [updatedEmail: string, updatedPassword: string | null];
 	'user.invited': [emails: string[]];
-
+	'user.created': [publicUser: PublicUser];
 	'workflow.create': [createdWorkflow: IWorkflowBase];
 	'workflow.afterCreate': [createdWorkflow: IWorkflowBase];
 	'workflow.activate': [updatedWorkflow: IWorkflowBase];

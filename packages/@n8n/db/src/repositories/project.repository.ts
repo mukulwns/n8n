@@ -26,23 +26,32 @@ export class ProjectRepository extends Repository<Project> {
 		});
 	}
 
-	async getAccessibleProjects(userId: string) {
+	async getAccessibleProjects(userId: string, tenantId: string): Promise<Project[]> {
+		if (!tenantId) {
+			throw new Error('Tenant ID missing');
+		}
 		return await this.find({
 			where: [
-				{ type: 'personal' },
 				{
-					projectRelations: {
-						userId,
-					},
+					type: 'personal',
+					tenantId,
+					projectRelations: { userId, role: 'project:personalOwner' },
+				},
+				{
+					type: 'team',
+					tenantId,
+					projectRelations: { userId },
 				},
 			],
+			relations: ['projectRelations'],
 		});
 	}
 
-	async getProjectCounts() {
+	async getProjectCounts(tenantId?: string) {
+		const where = tenantId ? { tenantId } : {};
 		return {
-			personal: await this.count({ where: { type: 'personal' } }),
-			team: await this.count({ where: { type: 'team' } }),
+			personal: await this.count({ where: { type: 'personal', ...where } }),
+			team: await this.count({ where: { type: 'team', ...where } }),
 		};
 	}
 }

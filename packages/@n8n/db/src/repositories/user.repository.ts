@@ -87,7 +87,7 @@ export class UserRepository extends Repository<User> {
 
 	async createUserWithProject(
 		user: DeepPartial<User>,
-		transactionManager?: EntityManager,
+		transactionManager?: EntityManager
 	): Promise<{ user: User; project: Project }> {
 		const createInner = async (entityManager: EntityManager) => {
 			const newUser = entityManager.create(User, {

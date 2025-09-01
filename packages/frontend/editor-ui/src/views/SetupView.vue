@@ -1,21 +1,16 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-
 import { useToast } from '@/composables/useToast';
 import { useI18n } from '@n8n/i18n';
-
 import { useSettingsStore } from '@/stores/settings.store';
 import { useUsersStore } from '@/stores/users.store';
-
 import type { IFormBoxConfig } from '@/Interface';
 import { VIEWS } from '@/constants';
-
 import AuthView from '@/views/AuthView.vue';
 
 const settingsStore = useSettingsStore();
 const usersStore = useUsersStore();
-
 const toast = useToast();
 const locale = useI18n();
 const router = useRouter();
@@ -69,6 +64,16 @@ const formConfig: IFormBoxConfig = reactive({
 			},
 		},
 		{
+			name: 'businessName',
+			properties: {
+				label: locale.baseText('auth.businessName'),
+				maxlength: 64,
+				required: true,
+				autocomplete: 'organization',
+				capitalize: true,
+			},
+		},
+		{
 			name: 'agree',
 			properties: {
 				label: locale.baseText('auth.agreement.label'),
@@ -82,15 +87,27 @@ const onSubmit = async (values: { [key: string]: string | boolean }) => {
 	try {
 		const forceRedirectedHere = settingsStore.showSetupPage;
 		loading.value = true;
-		await usersStore.createOwner(
-			values as { firstName: string; lastName: string; email: string; password: string },
-		);
+		await usersStore.createOwner({
+			firstName: values.firstName as string,
+			lastName: values.lastName as string,
+			email: values.email as string,
+			password: values.password as string,
+			businessName: values.businessName as string,
+		});
 
 		if (values.agree === true) {
 			try {
 				await usersStore.submitContactEmail(values.email.toString(), values.agree);
-			} catch { }
+			} catch {}
 		}
+
+		await settingsStore.toggleShowSetupOnFirstLoad(); // Set to false
+		toast.showMessage({
+			title: 'Success',
+			message: 'Owner setup successfully',
+			type: 'success',
+		});
+
 		if (forceRedirectedHere) {
 			await router.push({ name: VIEWS.HOMEPAGE });
 		} else {
@@ -98,11 +115,17 @@ const onSubmit = async (values: { [key: string]: string | boolean }) => {
 		}
 	} catch (error) {
 		toast.showError(error, locale.baseText('auth.setup.settingUpOwnerError'));
+	} finally {
+		loading.value = false;
 	}
-	loading.value = false;
 };
 </script>
 
 <template>
-	<AuthView :form="formConfig" :form-loading="loading" data-test-id="setup-form" @submit="onSubmit" />
+	<AuthView
+		:form="formConfig"
+		:form-loading="loading"
+		data-test-id="setup-form"
+		@submit="onSubmit"
+	/>
 </template>

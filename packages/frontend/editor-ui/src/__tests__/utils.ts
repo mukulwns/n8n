@@ -44,14 +44,14 @@ export const SETTINGS_STORE_DEFAULT_STATE: ISettingsState = {
 	initialized: true,
 	settings: defaultSettings,
 	userManagement: {
-		showSetupOnFirstLoad: false,
+		showSetupOnFirstLoad: true,
 		smtpSetup: false,
 		authenticationMethod: UserManagementAuthenticationMethod.Email,
 		quota: defaultSettings.userManagement.quota,
 	},
 	templatesEndpointHealthy: false,
 	api: {
-		enabled: false,
+		enabled: true,
 		latestVersion: 0,
 		path: '/',
 		swaggerUi: {

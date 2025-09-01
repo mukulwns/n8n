@@ -37,7 +37,7 @@ export class OwnerController {
 		private readonly postHog: PostHogClient,
 		private readonly userRepository: UserRepository,
 		private readonly externalHooks: ExternalHooks,
-	) { }
+	) {}
 
 	/**
 	 * Promote a shell into the owner of the n8n instance,
@@ -123,6 +123,7 @@ export class OwnerController {
 				lastName,
 				password: await this.passwordUtility.hash(password),
 				role: 'global:owner',
+				tenantId: savedTenant.id,
 			},
 			undefined,
 			// savedTenant.id,

@@ -82,6 +82,7 @@ export interface IUser extends IUserResponse {
 	createdAt?: string;
 	mfaEnabled: boolean;
 	mfaAuthenticated?: boolean;
+	tenantId?: string;
 }
 
 export async function loginCurrentUser(
@@ -109,6 +110,7 @@ export async function setupOwner(
 		email: string;
 		password: string;
 		businessName: string;
+		businessDomain: string;
 	},
 ): Promise<CurrentUserResponse> {
 	return await makeRestApiRequest(

@@ -1,7 +1,6 @@
 import { randomString, setGlobalState } from 'n8n-workflow';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-
 import { STORES } from './constants';
 
 const { VUE_APP_URL_BASE_API } = import.meta.env;
@@ -31,6 +30,7 @@ export type RootStoreState = {
 	urlBaseEditor: string;
 	instanceId: string;
 	binaryDataMode: 'default' | 'filesystem' | 's3';
+	currentUser: { id: string; tenantId: string; role: string } | null;
 };
 
 export const useRootStore = defineStore(STORES.ROOT, () => {
@@ -60,6 +60,7 @@ export const useRootStore = defineStore(STORES.ROOT, () => {
 		urlBaseEditor: 'http://localhost:5678',
 		instanceId: '',
 		binaryDataMode: 'default',
+		currentUser: null,
 	});
 
 	// ---------------------------------------------------------------------------
@@ -67,57 +68,37 @@ export const useRootStore = defineStore(STORES.ROOT, () => {
 	// ---------------------------------------------------------------------------
 
 	const baseUrl = computed(() => state.value.baseUrl);
-
 	const formUrl = computed(() => `${state.value.urlBaseWebhook}${state.value.endpointForm}`);
-
 	const formTestUrl = computed(() => `${state.value.urlBaseEditor}${state.value.endpointFormTest}`);
-
 	const formWaitingUrl = computed(
 		() => `${state.value.urlBaseEditor}${state.value.endpointFormWaiting}`,
 	);
-
 	const webhookUrl = computed(() => `${state.value.urlBaseWebhook}${state.value.endpointWebhook}`);
-
 	const webhookTestUrl = computed(
 		() => `${state.value.urlBaseEditor}${state.value.endpointWebhookTest}`,
 	);
-
 	const webhookWaitingUrl = computed(
 		() => `${state.value.urlBaseEditor}${state.value.endpointWebhookWaiting}`,
 	);
-
 	const mcpUrl = computed(() => `${state.value.urlBaseWebhook}${state.value.endpointMcp}`);
-
 	const mcpTestUrl = computed(() => `${state.value.urlBaseEditor}${state.value.endpointMcpTest}`);
-
 	const pushRef = computed(() => state.value.pushRef);
-
 	const binaryDataMode = computed(() => state.value.binaryDataMode);
-
 	const defaultLocale = computed(() => state.value.defaultLocale);
-
 	const urlBaseEditor = computed(() => state.value.urlBaseEditor);
-
 	const instanceId = computed(() => state.value.instanceId);
-
 	const versionCli = computed(() => state.value.versionCli);
-
 	const OAuthCallbackUrls = computed(() => state.value.oauthCallbackUrls);
-
 	const restUrl = computed(() => `${state.value.baseUrl}${state.value.restEndpoint}`);
-
 	const executionTimeout = computed(() => state.value.executionTimeout);
-
 	const maxExecutionTimeout = computed(() => state.value.maxExecutionTimeout);
-
 	const timezone = computed(() => state.value.timezone);
+	const currentUser = computed(() => state.value.currentUser);
 
 	const restApiContext = computed(() => ({
 		baseUrl: restUrl.value,
 		pushRef: state.value.pushRef,
 	}));
-
-	// #endregion
 
 	// ---------------------------------------------------------------------------
 	// #region Methods
@@ -194,6 +175,10 @@ export const useRootStore = defineStore(STORES.ROOT, () => {
 		state.value.binaryDataMode = value;
 	};
 
+	const setCurrentUser = (user: { id: string; tenantId: string; role: string } | null) => {
+		state.value.currentUser = user;
+	};
+
 	// #endregion
 
 	return {
@@ -218,6 +203,7 @@ export const useRootStore = defineStore(STORES.ROOT, () => {
 		executionTimeout,
 		maxExecutionTimeout,
 		timezone,
+		currentUser,
 		setUrlBaseWebhook,
 		setUrlBaseEditor,
 		setEndpointForm,
@@ -235,5 +221,6 @@ export const useRootStore = defineStore(STORES.ROOT, () => {
 		setN8nMetadata,
 		setDefaultLocale,
 		setBinaryDataMode,
+		setCurrentUser,
 	};
 });

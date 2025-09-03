@@ -72,6 +72,7 @@ export class WorkflowService {
 		includeScopes?: boolean,
 		includeFolders?: boolean,
 		onlySharedWithMe?: boolean,
+		tenantId?: string, // Add tenantId parameter
 	) {
 		let count;
 		let workflows;
@@ -94,6 +95,7 @@ export class WorkflowService {
 		} else {
 			sharedWorkflowIds = await this.workflowSharingService.getSharedWorkflowIds(user, {
 				scopes: ['workflow:read'],
+				tenantId, // Pass tenantId to filter
 			});
 		}
 
@@ -102,7 +104,6 @@ export class WorkflowService {
 				sharedWorkflowIds,
 				options,
 			);
-
 			workflows = workflowsAndFolders.filter((wf) => wf.resource === 'workflow');
 		} else {
 			({ workflows, count } = await this.workflowRepository.getManyAndCount(
@@ -111,13 +112,6 @@ export class WorkflowService {
 			));
 		}
 
-		/*
-			Since we're filtering using project ID as part of the relation,
-			we end up filtering out all the other relations, meaning that if
-			it's shared to a project, it won't be able to find the home project.
-			To solve this, we have to get all the relation now, even though
-			we're deleting them later.
-		*/
 		if (hasSharing(workflows)) {
 			workflows = await this.processSharedWorkflows(workflows, options);
 		}
@@ -577,5 +571,15 @@ export class WorkflowService {
 			resourceType: 'workflow',
 			...workflow,
 		}));
+	}
+
+	async findWorkflowsByTenantId(tenantId: string, userId: string) {
+		return this.workflowRepository
+			.createQueryBuilder('workflow')
+			.leftJoinAndSelect('workflow.shared', 'shared')
+			.leftJoinAndSelect('shared.project', 'project')
+			.where('project.tenantId = :tenantId', { tenantId })
+			.andWhere('shared.userId = :userId', { userId })
+			.getMany();
 	}
 }

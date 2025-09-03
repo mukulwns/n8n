@@ -23,20 +23,28 @@ export class ExecutionsController {
 		private readonly license: License,
 	) {}
 
-	private async getAccessibleWorkflowIds(user: User, scope: Scope) {
+	private async getAccessibleWorkflowIds(user: User, scope: Scope, tenantId?: string) {
 		if (this.license.isSharingEnabled()) {
-			return await this.workflowSharingService.getSharedWorkflowIds(user, { scopes: [scope] });
+			return await this.workflowSharingService.getSharedWorkflowIds(user, {
+				scopes: [scope],
+				tenantId,
+			});
 		} else {
 			return await this.workflowSharingService.getSharedWorkflowIds(user, {
 				workflowRoles: ['workflow:owner'],
 				projectRoles: ['project:personalOwner'],
+				tenantId,
 			});
 		}
 	}
 
 	@Get('/', { middlewares: [parseRangeQuery] })
 	async getMany(req: ExecutionRequest.GetMany) {
-		const accessibleWorkflowIds = await this.getAccessibleWorkflowIds(req.user, 'workflow:read');
+		const accessibleWorkflowIds = await this.getAccessibleWorkflowIds(
+			req.user,
+			'workflow:read',
+			req.user.tenantId || '',
+		);
 
 		if (accessibleWorkflowIds.length === 0) {
 			return { count: 0, estimated: false, results: [] };
@@ -81,7 +89,11 @@ export class ExecutionsController {
 			throw new BadRequestError('Execution ID is not a number');
 		}
 
-		const workflowIds = await this.getAccessibleWorkflowIds(req.user, 'workflow:read');
+		const workflowIds = await this.getAccessibleWorkflowIds(
+			req.user,
+			'workflow:read',
+			req.user.tenantId || '',
+		);
 
 		if (workflowIds.length === 0) throw new NotFoundError('Execution not found');
 
@@ -92,7 +104,11 @@ export class ExecutionsController {
 
 	@Post('/:id/stop')
 	async stop(req: ExecutionRequest.Stop) {
-		const workflowIds = await this.getAccessibleWorkflowIds(req.user, 'workflow:execute');
+		const workflowIds = await this.getAccessibleWorkflowIds(
+			req.user,
+			'workflow:execute',
+			req.user.tenantId || '',
+		);
 
 		if (workflowIds.length === 0) throw new NotFoundError('Execution not found');
 
@@ -103,7 +119,11 @@ export class ExecutionsController {
 
 	@Post('/:id/retry')
 	async retry(req: ExecutionRequest.Retry) {
-		const workflowIds = await this.getAccessibleWorkflowIds(req.user, 'workflow:execute');
+		const workflowIds = await this.getAccessibleWorkflowIds(
+			req.user,
+			'workflow:execute',
+			req.user.tenantId || '',
+		);
 
 		if (workflowIds.length === 0) throw new NotFoundError('Execution not found');
 
@@ -112,7 +132,11 @@ export class ExecutionsController {
 
 	@Post('/delete')
 	async delete(req: ExecutionRequest.Delete) {
-		const workflowIds = await this.getAccessibleWorkflowIds(req.user, 'workflow:execute');
+		const workflowIds = await this.getAccessibleWorkflowIds(
+			req.user,
+			'workflow:execute',
+			req.user.tenantId || '',
+		);
 
 		if (workflowIds.length === 0) throw new NotFoundError('Execution not found');
 
@@ -125,7 +149,11 @@ export class ExecutionsController {
 			throw new BadRequestError('Execution ID is not a number');
 		}
 
-		const workflowIds = await this.getAccessibleWorkflowIds(req.user, 'workflow:read');
+		const workflowIds = await this.getAccessibleWorkflowIds(
+			req.user,
+			'workflow:read',
+			req.user.tenantId || '',
+		);
 
 		// Fail fast if no workflows are accessible
 		if (workflowIds.length === 0) throw new NotFoundError('Execution not found');

@@ -12,6 +12,8 @@ import { UpdateWorkflowCredentials1630419189837 } from './1630419189837-UpdateWo
 import { AddExecutionEntityIndexes1644422880309 } from './1644422880309-AddExecutionEntityIndexes';
 import { IncreaseTypeVarcharLimit1646834195327 } from './1646834195327-IncreaseTypeVarcharLimit';
 import { CreateUserManagement1646992772331 } from './1646992772331-CreateUserManagement';
+import { AddTenantForeignKeyToUsers1692200000000 } from './1756881223818-1692200000000-AddTenantForeignKeyToUsers';
+
 import { LowerCaseUserEmail1648740597343 } from './1648740597343-LowerCaseUserEmail';
 import { CommunityNodes1652254514002 } from './1652254514002-CommunityNodes';
 import { AddUserSettings1652367743993 } from './1652367743993-AddUserSettings';
@@ -190,4 +192,5 @@ export const postgresMigrations: Migration[] = [
 	CreateTenantTable1692000000000,
 	AddTenantToProject1724320000000,
 	AddTenantIdToSettings1756127909134,
+	AddTenantForeignKeyToUsers1692200000000,
 ];

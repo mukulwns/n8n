@@ -76,15 +76,15 @@ const {
 				@update="onUpdate"
 			>
 				<SSOLogin v-if="withSso" />
-				<button
+				<N8nButton
 					:disabled="formLoading"
 					@click="router.push({ name: settingsStore.showSetupPage ? VIEWS.SIGNIN : VIEWS.SETUP })"
 				>
 					{{ settingsStore.showSetupPage ? 'Sign In' : 'Setup New Tenant' }}
-				</button>
-				<button :disabled="formLoading" @click="toggleSetupPage">
+				</N8nButton>
+				<N8nButton :disabled="formLoading" @click="toggleSetupPage">
 					{{ settingsStore.showSetupPage ? 'Disable Setup Page' : 'Enable Setup Page' }}
-				</button>
+				</N8nButton>
 			</N8nFormBox>
 		</div>
 	</div>

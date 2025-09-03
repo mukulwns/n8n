@@ -46,41 +46,41 @@ export class UserSettingsController {
 		private readonly userService: UserService,
 		private readonly logger: Logger,
 	) {}
-	@Post('/update')
-	async updateSettings(
-		req: AuthenticatedRequest,
-		res: Response,
-		@Body payload: UpdateSettingsRequestDto,
-	) {
-		const { showSetupOnFirstLoad } = payload;
-		const tenantId = req.tenantId;
+	// @Post('/update')
+	// async updateSettings(
+	// 	req: AuthenticatedRequest,
+	// 	res: Response,
+	// 	@Body payload: UpdateSettingsRequestDto,
+	// ) {
+	// 	const { showSetupOnFirstLoad } = payload;
+	// 	const tenantId = req.tenantId;
 
-		if (!tenantId) {
-			this.logger.debug('Request to update settings failed because tenant ID is missing in JWT');
-			throw new BadRequestError('Tenant ID missing in JWT');
-		}
+	// 	if (!tenantId) {
+	// 		this.logger.debug('Request to update settings failed because tenant ID is missing in JWT');
+	// 		throw new BadRequestError('Tenant ID missing in JWT');
+	// 	}
 
-		if (showSetupOnFirstLoad === undefined) {
-			this.logger.debug(
-				'Request to update settings failed because showSetupOnFirstLoad is missing in payload',
-			);
-			throw new BadRequestError('Missing showSetupOnFirstLoad in payload');
-		}
+	// 	if (showSetupOnFirstLoad === undefined) {
+	// 		this.logger.debug(
+	// 			'Request to update settings failed because showSetupOnFirstLoad is missing in payload',
+	// 		);
+	// 		throw new BadRequestError('Missing showSetupOnFirstLoad in payload');
+	// 	}
 
-		const tenantRepo = Container.get(TenantRepository);
-		const tenant = await tenantRepo.findOne({ where: { id: tenantId } });
-		if (!tenant) {
-			this.logger.debug(`Tenant with ID '${tenantId}' not found`);
-			throw new BadRequestError(`Tenant with ID '${tenantId}' not found`);
-		}
+	// 	const tenantRepo = Container.get(TenantRepository);
+	// 	const tenant = await tenantRepo.findOne({ where: { id: tenantId } });
+	// 	if (!tenant) {
+	// 		this.logger.debug(`Tenant with ID '${tenantId}' not found`);
+	// 		throw new BadRequestError(`Tenant with ID '${tenantId}' not found`);
+	// 	}
 
-		await tenantRepo.update({ id: tenantId }, { showSetupOnFirstLoad });
-		this.logger.debug(
-			`Updated showSetupOnFirstLoad to ${showSetupOnFirstLoad} for tenant ${tenantId}`,
-		);
+	// 	await tenantRepo.update({ id: tenantId }, { showSetupOnFirstLoad });
+	// 	this.logger.debug(
+	// 		`Updated showSetupOnFirstLoad to ${showSetupOnFirstLoad} for tenant ${tenantId}`,
+	// 	);
 
-		return { success: true };
-	}
+	// 	return { success: true };
+	// }
 	@Patch('/nps-survey')
 	async updateNpsSurvey(req: NpsSurveyRequest.NpsSurveyUpdate): Promise<void> {
 		const state = getNpsSurveyState(req.body);

@@ -14,8 +14,13 @@ import { In } from '@n8n/typeorm';
 import { RoleService } from '@/services/role.service';
 
 export type ShareWorkflowOptions =
-	| { scopes: Scope[]; projectId?: string }
-	| { projectRoles: ProjectRole[]; workflowRoles: WorkflowSharingRole[]; projectId?: string };
+	| { scopes: Scope[]; projectId?: string; tenantId?: string }
+	| {
+			projectRoles: ProjectRole[];
+			workflowRoles: WorkflowSharingRole[];
+			projectId?: string;
+			tenantId?: string;
+	  };
 
 @Service()
 export class WorkflowSharingService {
@@ -35,21 +40,21 @@ export class WorkflowSharingService {
 	 */
 
 	async getSharedWorkflowIds(user: User, options: ShareWorkflowOptions): Promise<string[]> {
-		const { projectId } = options;
-
+		const { projectId, tenantId } = options;
 		if (hasGlobalScope(user, 'workflow:read')) {
 			const sharedWorkflows = await this.sharedWorkflowRepository.find({
 				select: ['workflowId'],
-				...(projectId && { where: { projectId } }),
+				where: {
+					...(projectId && { projectId }),
+					...(tenantId && { project: { tenantId } }), // Add tenantId filter
+				},
 			});
 			return sharedWorkflows.map(({ workflowId }) => workflowId);
 		}
-
 		const projectRoles =
 			'scopes' in options ? rolesWithScope('project', options.scopes) : options.projectRoles;
 		const workflowRoles =
 			'scopes' in options ? rolesWithScope('workflow', options.scopes) : options.workflowRoles;
-
 		const sharedWorkflows = await this.sharedWorkflowRepository.find({
 			where: {
 				role: In(workflowRoles),
@@ -58,11 +63,11 @@ export class WorkflowSharingService {
 						userId: user.id,
 						role: In(projectRoles),
 					},
+					...(tenantId && { tenantId }), // Add tenantId filter
 				},
 			},
 			select: ['workflowId'],
 		});
-
 		return sharedWorkflows.map(({ workflowId }) => workflowId);
 	}
 

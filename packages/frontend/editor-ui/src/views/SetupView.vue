@@ -74,6 +74,15 @@ const formConfig: IFormBoxConfig = reactive({
 			},
 		},
 		{
+			name: 'businessDomain',
+			properties: {
+				label: locale.baseText('auth.businessDomain'),
+				maxlength: 64,
+				autocomplete: 'domain',
+				capitalize: true,
+			},
+		},
+		{
 			name: 'agree',
 			properties: {
 				label: locale.baseText('auth.agreement.label'),
@@ -93,6 +102,7 @@ const onSubmit = async (values: { [key: string]: string | boolean }) => {
 			email: values.email as string,
 			password: values.password as string,
 			businessName: values.businessName as string,
+			businessDomain: values.businessName as string,
 		});
 
 		if (values.agree === true) {

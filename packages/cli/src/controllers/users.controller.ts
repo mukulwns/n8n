@@ -105,6 +105,7 @@ export class UsersController {
 			...listQueryOptions,
 			where: {
 				...listQueryOptions.filter,
+				tenantId: req.user.tenantId, // Add tenantId filter
 			},
 		});
 
@@ -143,7 +144,7 @@ export class UsersController {
 		const user = await this.userRepository.findOneOrFail({
 			where: {
 				id: req.params.id,
-				tenantId: `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
+				tenantId: req.user.tenantId || `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
 				// ?? undefined
 			},
 		});
@@ -197,7 +198,7 @@ export class UsersController {
 
 		const userToDelete = await this.userRepository.findOneBy({
 			id: idToDelete,
-			tenantId: `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
+			tenantId: req.user.tenantId || `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
 			// ?? undefined,
 		});
 
@@ -317,7 +318,7 @@ export class UsersController {
 
 		const targetUser = await this.userRepository.findOneBy({
 			id,
-			tenantId: `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
+			tenantId: req.user.tenantId || `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
 			// ?? undefined
 		});
 		if (targetUser === null) {

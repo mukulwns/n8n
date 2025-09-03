@@ -234,8 +234,8 @@ export class WorkflowsController {
 				!!req.query.includeScopes,
 				!!req.query.includeFolders,
 				!!req.query.onlySharedWithMe,
+				req.user.tenantId || '', // Pass tenantId
 			);
-
 			res.json({ count, data });
 		} catch (maybeError) {
 			const error = utils.toError(maybeError);

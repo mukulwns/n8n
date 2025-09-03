@@ -87,7 +87,7 @@ export class OwnerController {
 	// Tumhara code (already verified)
 	@Post('/setup', { skipAuth: true })
 	async setupOwner(req: AuthenticatedRequest, res: Response, @Body payload: OwnerSetupRequestDto) {
-		const { email, firstName, lastName, password, businessName } = payload;
+		const { email, firstName, lastName, password, businessName, businessDomain } = payload;
 
 		if (!email || !firstName || !lastName || !password || !businessName) {
 			this.logger.debug('Request to set up owner failed because of missing fields in payload', {
@@ -111,7 +111,7 @@ export class OwnerController {
 			throw new BadRequestError('Email already registered');
 		}
 
-		const tenant = tenantRepo.create({ name: businessName });
+		const tenant = tenantRepo.create({ name: businessName, domain: businessDomain });
 		const savedTenant = await tenantRepo.save(tenant);
 		this.logger.debug('Created tenant', { tenantId: savedTenant.id });
 

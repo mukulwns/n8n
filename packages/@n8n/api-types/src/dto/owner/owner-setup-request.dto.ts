@@ -9,6 +9,6 @@ export class OwnerSetupRequestDto extends Z.class({
 	lastName: z.string().min(1, 'Last name is required'),
 	password: passwordSchema,
 	businessName: z.string().min(1, 'Business name is required'),
-	businessDomain: z.string().min(1, 'Business domain is required'),
+	businessDomain: z.string().min(1, 'Business domain is required').optional(),
 	tenantId: z.string().min(1, 'Tenant Id required').optional(),
-}) { }
+}) {}

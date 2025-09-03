@@ -155,6 +155,7 @@
 	"auth.newPassword": "New password",
 	"auth.password": "Password",
 	"auth.businessName": "Business Name",
+	"auth.businessDomain": "Business Domain",
 	"auth.role": "Role",
 	"auth.roles.default": "Default",
 	"auth.roles.member": "Member",

@@ -101,11 +101,15 @@ export class UsersController {
 		_res: Response,
 		@Query listQueryOptions: UsersListFilterDto,
 	) {
+		if (!listQueryOptions.filter) {
+			listQueryOptions.filter = {};
+		}
+		listQueryOptions.filter.tenantId = req.user.tenantId ?? undefined;
+
 		const userQuery = this.userRepository.buildUserQuery({
 			...listQueryOptions,
 			where: {
 				...listQueryOptions.filter,
-				tenantId: req.user.tenantId, // Add tenantId filter
 			},
 		});
 

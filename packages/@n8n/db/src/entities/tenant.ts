@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from '@n8n/typeorm';
 import { User } from './user';
 import { Project } from './project';
+import { Variables } from './variables';
 
 @Entity()
 export class Tenant {
@@ -29,4 +30,11 @@ export class Tenant {
 		(project) => project.tenant,
 	)
 	projects: Project[];
+
+	// Relation with variable (via variable.tenantId)
+	@OneToMany(
+		() => Variables,
+		(variable) => variable.tenant,
+	)
+	variables: Variables[];
 }

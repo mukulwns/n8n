@@ -898,7 +898,7 @@ export class SourceControlImportService {
 
 	async deleteTagsNotInWorkfolder(candidates: SourceControlledFile[]) {
 		for (const candidate of candidates) {
-			await this.tagService.delete(candidate.id);
+			await this.tagService.delete(candidate.id, '');
 		}
 	}
 

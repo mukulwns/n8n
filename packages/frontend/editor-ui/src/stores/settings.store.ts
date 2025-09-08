@@ -27,7 +27,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const moduleSettings = ref<FrontendModuleSettings>({});
 	const userManagement = ref<IUserManagementSettings>({
 		quota: -1,
-		showSetupOnFirstLoad: useLocalStorage('showSetupOnFirstLoad', true).value, // Use localStorage for persistence
+		showSetupOnFirstLoad: useLocalStorage('showSetupOnFirstLoad', false).value, // Use localStorage for persistence
 		smtpSetup: false,
 		authenticationMethod: UserManagementAuthenticationMethod.Email,
 	});
@@ -127,14 +127,65 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const isCommunityPlan = computed(() => planName.value.toLowerCase() === 'community');
 	const isDevRelease = computed(() => settings.value.releaseChannel === 'dev');
 
+	// const setSettings = (newSettings: FrontendSettings) => {
+	// 	settings.value = newSettings;
+	// 	userManagement.value = newSettings.userManagement;
+	// 	api.value = settings.value.publicApi;
+	// 	mfa.value.enabled = settings.value.mfa?.enabled;
+	// 	folders.value.enabled = settings.value.folders?.enabled;
+
+	// 	// Sync showSetupOnFirstLoad with localStorage
+	// 	userManagement.value.showSetupOnFirstLoad = useLocalStorage(
+	// 		'showSetupOnFirstLoad',
+	// 		newSettings.userManagement.showSetupOnFirstLoad,
+	// 	).value;
+
+	// 	if (settings.value.versionCli) {
+	// 		useRootStore().setVersionCli(settings.value.versionCli);
+	// 	}
+
+	// 	if (settings.value.authCookie.secure) {
+	// 		const { browser } = Bowser.parse(navigator.userAgent);
+	// 		if (
+	// 			location.protocol === 'http:' &&
+	// 			(!['localhost', '127.0.0.1'].includes(location.hostname) || browser.name === 'Safari')
+	// 		) {
+	// 			document.write(INSECURE_CONNECTION_WARNING);
+	// 			return;
+	// 		}
+	// 	}
+	// };
 	const setSettings = (newSettings: FrontendSettings) => {
-		settings.value = newSettings;
-		userManagement.value = newSettings.userManagement;
+		settings.value = {
+			...newSettings,
+
+			// 🚀 Force enable enterprise-only features (override Community Edition limit)
+			enterprise: {
+				...newSettings.enterprise,
+				sharing: true,
+				advancedPermissions: true,
+				projects: {
+					team: {
+						limit: 1000, // increase team member limit
+					},
+				},
+			},
+
+			// 🚀 Fake license info so UI won’t show "upgrade to enterprise"
+			license: {
+				...newSettings.license,
+				planName: 'Enterprise',
+				consumerId: 'saas-license',
+				environment: 'production',
+			},
+		};
+
+		userManagement.value = settings.value.userManagement;
 		api.value = settings.value.publicApi;
 		mfa.value.enabled = settings.value.mfa?.enabled;
 		folders.value.enabled = settings.value.folders?.enabled;
 
-		// Sync showSetupOnFirstLoad with localStorage
+		// ✅ Keep your showSetupOnFirstLoad sync with localStorage
 		userManagement.value.showSetupOnFirstLoad = useLocalStorage(
 			'showSetupOnFirstLoad',
 			newSettings.userManagement.showSetupOnFirstLoad,

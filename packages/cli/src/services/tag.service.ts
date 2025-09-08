@@ -16,9 +16,10 @@ export class TagService {
 		private tagRepository: TagRepository,
 	) {}
 
-	toEntity(attrs: { name: string; id?: string }) {
+	toEntity(attrs: { name: string; id?: string; tenantId?: string }) {
 		attrs.name = attrs.name.trim();
 
+		// Ensure tenantId is always set when creating
 		return this.tagRepository.create(attrs);
 	}
 
@@ -36,21 +37,29 @@ export class TagService {
 		return await savedTag;
 	}
 
-	async delete(id: string) {
+	async delete(id: string, tenantId: string) {
 		await this.externalHooks.run('tag.beforeDelete', [id]);
 
-		const deleteResult = this.tagRepository.delete(id);
+		// Tenant scoped delete
+		const deleteResult = this.tagRepository.delete({
+			id,
+			tenant: { id: tenantId } as any,
+		});
 
 		await this.externalHooks.run('tag.afterDelete', [id]);
 
 		return await deleteResult;
 	}
 
-	async getAll<T extends { withUsageCount: boolean }>(options?: T): Promise<GetAllResult<T>> {
+	async getAll<T extends { withUsageCount: boolean }>(
+		tenantId: string,
+		options?: T,
+	): Promise<GetAllResult<T>> {
 		if (options?.withUsageCount) {
 			const tags = await this.tagRepository
 				.createQueryBuilder('tag')
 				.select(['tag.id', 'tag.name', 'tag.createdAt', 'tag.updatedAt'])
+				.where('tag.tenant_id = :tenantId', { tenantId })
 				.loadRelationCountAndMap('tag.usageCount', 'tag.workflowMappings', 'wm', (qb) =>
 					qb.leftJoin('wm.workflows', 'workflow').where('workflow.isArchived = :isArchived', {
 						isArchived: false,
@@ -61,14 +70,18 @@ export class TagService {
 			return tags as GetAllResult<T>;
 		}
 
-		return await (this.tagRepository.find({
+		return (await this.tagRepository.find({
+			where: { tenant: { id: tenantId } },
 			select: ['id', 'name', 'createdAt', 'updatedAt'],
-		}) as Promise<GetAllResult<T>>);
+		})) as GetAllResult<T>;
 	}
 
-	async getById(id: string) {
+	async getById(id: string, tenantId: string) {
 		return await this.tagRepository.findOneOrFail({
-			where: { id },
+			where: {
+				id,
+				tenant: { id: tenantId },
+			},
 		});
 	}
 

@@ -19,8 +19,9 @@ export = {
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'tag:create' }),
 		async (req: TagRequest.Create, res: express.Response): Promise<express.Response> => {
 			const { name } = req.body;
+			const tenantId = req.user?.tenantId ?? '';
 
-			const newTag = Container.get(TagService).toEntity({ name: name.trim() });
+			const newTag = Container.get(TagService).toEntity({ name: name.trim(), tenantId });
 
 			try {
 				const createdTag = await Container.get(TagService).save(newTag, 'create');
@@ -35,14 +36,15 @@ export = {
 		async (req: TagRequest.Update, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
 			const { name } = req.body;
+			const tenantId = req.user?.tenantId ?? '';
 
 			try {
-				await Container.get(TagService).getById(id);
+				await Container.get(TagService).getById(id, tenantId);
 			} catch (error) {
 				return res.status(404).json({ message: 'Not Found' });
 			}
 
-			const updateTag = Container.get(TagService).toEntity({ id, name: name.trim() });
+			const updateTag = Container.get(TagService).toEntity({ id, name: name.trim(), tenantId });
 
 			try {
 				const updatedTag = await Container.get(TagService).save(updateTag, 'update');
@@ -56,15 +58,16 @@ export = {
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'tag:delete' }),
 		async (req: TagRequest.Delete, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
+			const tenantId = req.user?.tenantId ?? '';
 
 			let tag;
 			try {
-				tag = await Container.get(TagService).getById(id);
+				tag = await Container.get(TagService).getById(id, tenantId);
 			} catch (error) {
 				return res.status(404).json({ message: 'Not Found' });
 			}
 
-			await Container.get(TagService).delete(id);
+			await Container.get(TagService).delete(id, tenantId);
 			return res.json(tag);
 		},
 	],
@@ -73,13 +76,13 @@ export = {
 		validCursor,
 		async (req: TagRequest.GetAll, res: express.Response): Promise<express.Response> => {
 			const { offset = 0, limit = 100 } = req.query;
+			const tenantId = req.user?.tenantId ?? '';
 
-			const query: FindManyOptions<TagEntity> = {
+			const [tags, count] = await Container.get(TagRepository).findAndCount({
+				where: { tenant: { id: tenantId } },
 				skip: offset,
 				take: limit,
-			};
-
-			const [tags, count] = await Container.get(TagRepository).findAndCount(query);
+			});
 
 			return res.json({
 				data: tags,
@@ -95,9 +98,10 @@ export = {
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'tag:read' }),
 		async (req: TagRequest.Get, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
+			const tenantId = req.user?.tenantId ?? '';
 
 			try {
-				const tag = await Container.get(TagService).getById(id);
+				const tag = await Container.get(TagService).getById(id, tenantId);
 				return res.json(tag);
 			} catch (error) {
 				return res.status(404).json({ message: 'Not Found' });

@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from '@n8n/typeorm';
 import { User } from './user';
 import { Project } from './project';
+import { TagEntity } from './tag-entity';
 
 @Entity()
 export class Tenant {
@@ -29,4 +30,9 @@ export class Tenant {
 		(project) => project.tenant,
 	)
 	projects: Project[];
+	@OneToMany(
+		() => TagEntity,
+		(tag) => tag.tenant,
+	)
+	tags: TagEntity[];
 }

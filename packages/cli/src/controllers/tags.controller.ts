@@ -22,7 +22,11 @@ export class TagsController {
 	@Get('/')
 	@GlobalScope('tag:list')
 	async getAll(_req: AuthenticatedRequest, _res: Response, @Query query: RetrieveTagQueryDto) {
-		return await this.tagService.getAll({ withUsageCount: query.withUsageCount });
+		const tenantId = _req.user?.tenantId ?? null;
+		if (!tenantId) {
+			throw new Error('Tenant ID is required');
+		}
+		return await this.tagService.getAll(tenantId, { withUsageCount: query.withUsageCount });
 	}
 
 	@Post('/')
@@ -32,8 +36,13 @@ export class TagsController {
 		_res: Response,
 		@Body payload: CreateOrUpdateTagRequestDto,
 	) {
+		const tenantId = _req.user?.tenantId ?? null;
+		if (!tenantId) {
+			throw new Error('Tenant ID is required');
+		}
 		const { name } = payload;
-		const tag = this.tagService.toEntity({ name });
+
+		const tag = this.tagService.toEntity({ name, tenantId });
 
 		return await this.tagService.save(tag, 'create');
 	}
@@ -46,7 +55,11 @@ export class TagsController {
 		@Param('id') tagId: string,
 		@Body payload: CreateOrUpdateTagRequestDto,
 	) {
-		const newTag = this.tagService.toEntity({ id: tagId, name: payload.name });
+		const tenantId = _req.user?.tenantId ?? null;
+		if (!tenantId) {
+			throw new Error('Tenant ID is required');
+		}
+		const newTag = this.tagService.toEntity({ id: tagId, name: payload.name, tenantId });
 
 		return await this.tagService.save(newTag, 'update');
 	}
@@ -54,7 +67,11 @@ export class TagsController {
 	@Delete('/:id')
 	@GlobalScope('tag:delete')
 	async deleteTag(_req: AuthenticatedRequest, _res: Response, @Param('id') tagId: string) {
-		await this.tagService.delete(tagId);
+		const tenantId = _req.user?.tenantId ?? null;
+		if (!tenantId) {
+			throw new Error('Tenant ID is required');
+		}
+		await this.tagService.delete(tagId, tenantId);
 		return true;
 	}
 }

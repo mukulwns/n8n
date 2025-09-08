@@ -97,6 +97,7 @@ import type { Migration } from '../migration-types';
 import { AddTenantToProject1724320000000 } from '../common/1755851971754-AddTenantToProject';
 import { AddTenantIdToSettings1756127909134 } from './1756127909134-AddTenantIdToSettings';
 import { AddTenantToTag1755851971760 } from './1757078545745-1755852000000-AddTenantToTag';
+import { AddTenantIdToVariables1693929000000 } from './AddTenantIdToVariables1693929000000';
 
 export const postgresMigrations: Migration[] = [
 	InitialMigration1587669153312,
@@ -195,4 +196,5 @@ export const postgresMigrations: Migration[] = [
 	AddTenantIdToSettings1756127909134,
 	AddTenantForeignKeyToUsers1692200000000,
 	AddTenantToTag1755851971760,
+	AddTenantIdToVariables1693929000000,
 ];

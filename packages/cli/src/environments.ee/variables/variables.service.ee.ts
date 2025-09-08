@@ -17,10 +17,8 @@ export class VariablesService {
 		private readonly license: License,
 	) {}
 
-	async getAllCached(state?: 'empty'): Promise<Variables[]> {
-		let variables = await this.cacheService.get('variables', {
-			refreshFn: async () => await this.findAll(),
-		});
+	async getAllCached(state?: 'empty', tenantId?: string): Promise<Variables[]> {
+		let variables = await this.findAll(tenantId); // removed the logic where variables are getting fetched from cache
 
 		if (variables === undefined) {
 			return [];
@@ -57,8 +55,12 @@ export class VariablesService {
 		await this.cacheService.set('variables', variables);
 	}
 
-	async findAll(): Promise<Variables[]> {
-		return await this.variablesRepository.find();
+	async findAll(tenantId?: string): Promise<Variables[]> {
+		return await this.variablesRepository.find({
+			where: {
+				tenantId,
+			},
+		});
 	}
 
 	validateVariable(variable: Omit<Variables, 'id'>): void {

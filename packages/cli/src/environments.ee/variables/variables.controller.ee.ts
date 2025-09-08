@@ -25,14 +25,18 @@ export class VariablesController {
 	@Get('/')
 	@GlobalScope('variable:list')
 	async getVariables(_req: unknown, _res: unknown, @Query query: VariableListRequestDto) {
-		return await this.variablesService.getAllCached(query.state);
+		const req = _req as { user?: { tenantId?: string | null } };
+		const tenantId = req.user?.tenantId ?? undefined;
+		return await this.variablesService.getAllCached(query.state, tenantId);
 	}
 
 	@Post('/')
 	@Licensed('feat:variables')
 	@GlobalScope('variable:create')
 	async createVariable(req: VariablesRequest.Create) {
+		const tenantId = req.user?.tenantId;
 		const variable = req.body;
+		variable.tenantId = tenantId; // add tenant id in variables table
 		delete variable.id;
 		try {
 			return await this.variablesService.create(variable);

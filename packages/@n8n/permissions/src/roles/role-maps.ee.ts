@@ -24,7 +24,11 @@ import type {
 	Scope,
 	WorkflowSharingRole,
 } from '../types.ee';
-
+import {
+	TENANT_OWNER_SCOPES,
+	TENANT_ADMIN_SCOPES,
+	TENANT_MEMBER_SCOPES,
+} from './scopes/tenant-scopes.ee';
 export const GLOBAL_SCOPE_MAP: Record<GlobalRole, Scope[]> = {
 	'global:owner': GLOBAL_OWNER_SCOPES,
 	'global:admin': GLOBAL_ADMIN_SCOPES,
@@ -54,3 +58,8 @@ export const ALL_ROLE_MAPS = {
 	credential: CREDENTIALS_SHARING_SCOPE_MAP,
 	workflow: WORKFLOW_SHARING_SCOPE_MAP,
 } as const;
+export const TENANT_SCOPE_MAP = {
+	'tenant:owner': TENANT_OWNER_SCOPES,
+	'tenant:admin': TENANT_ADMIN_SCOPES,
+	'tenant:member': TENANT_MEMBER_SCOPES,
+};

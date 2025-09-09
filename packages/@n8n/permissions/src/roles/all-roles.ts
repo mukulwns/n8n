@@ -2,11 +2,11 @@ import {
 	CREDENTIALS_SHARING_SCOPE_MAP,
 	GLOBAL_SCOPE_MAP,
 	PROJECT_SCOPE_MAP,
+	TENANT_SCOPE_MAP,
 	WORKFLOW_SHARING_SCOPE_MAP,
 } from './role-maps.ee';
 import type { AllRolesMap, AllRoleTypes, Scope } from '../types.ee';
 import { getRoleScopes } from '../utilities/get-role-scopes.ee';
-
 const ROLE_NAMES: Record<AllRoleTypes, string> = {
 	'global:owner': 'Owner',
 	'global:admin': 'Admin',
@@ -36,6 +36,7 @@ const mapToRoleObject = <T extends keyof typeof ROLE_NAMES>(roles: Record<T, Sco
 
 export const ALL_ROLES: AllRolesMap = {
 	global: mapToRoleObject(GLOBAL_SCOPE_MAP),
+	tenant: mapToRoleObject(TENANT_SCOPE_MAP),
 	project: mapToRoleObject(PROJECT_SCOPE_MAP),
 	credential: mapToRoleObject(CREDENTIALS_SHARING_SCOPE_MAP),
 	workflow: mapToRoleObject(WORKFLOW_SHARING_SCOPE_MAP),

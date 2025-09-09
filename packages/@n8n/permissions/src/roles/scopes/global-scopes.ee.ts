@@ -98,8 +98,15 @@ export const GLOBAL_MEMBER_SCOPES: Scope[] = [
 	'tag:create',
 	'tag:read',
 	'tag:update',
+	'tag:delete', // added
 	'tag:list',
 	'user:list',
 	'variable:list',
 	'variable:read',
+	'variable:update', // added
+	'variable:delete', // added
+	'workflow:create', // added
+	'workflow:read', // added
+	'workflow:update', // added
+	'workflow:list', // added
 ];

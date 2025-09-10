@@ -40,7 +40,7 @@ if (process.env.E2E_TESTS !== 'true') {
 
 	// Loading dotenv early ensures that `process.env` is up-to-date everywhere in code
 	require('dotenv').config();
-		console.log('DB_POSTGRESDB_SSL_ENABLED--------------:', process.env.DB_POSTGRESDB_SSL_ENABLED);
+		console.log('DB_POSTGRESDB_SSL_ENABLED--------------:', process.env.DB_POSTGRESDB_DATABASE);
 
 }
 

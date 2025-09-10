@@ -3,6 +3,7 @@ import { User } from './user';
 import { Project } from './project';
 import { TagEntity } from './tag-entity';
 import { Variables } from './variables';
+import { CredentialsEntity } from './credentials-entity';
 
 @Entity()
 export class Tenant {
@@ -43,4 +44,11 @@ export class Tenant {
 		(variable) => variable.tenant,
 	)
 	variables: Variables[];
+
+	// 👇 New: Relation with Credentials
+	@OneToMany(
+		() => CredentialsEntity,
+		(credential) => credential.tenant,
+	)
+	credentials: CredentialsEntity[];
 }

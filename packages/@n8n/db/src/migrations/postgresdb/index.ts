@@ -98,7 +98,7 @@ import { AddTenantToProject1724320000000 } from '../common/1755851971754-AddTena
 import { AddTenantIdToSettings1756127909134 } from './1756127909134-AddTenantIdToSettings';
 import { AddTenantToTag1755851971760 } from './1757078545745-1755852000000-AddTenantToTag';
 import { AddTenantIdToVariables1693929000000 } from './AddTenantIdToVariables1693929000000';
-
+import { AddTenantToCredentials1755852500000 } from './1757421038733-1755852000000-AddTenantIdToCredentials';
 export const postgresMigrations: Migration[] = [
 	InitialMigration1587669153312,
 	WebhookModel1589476000887,
@@ -197,4 +197,5 @@ export const postgresMigrations: Migration[] = [
 	AddTenantForeignKeyToUsers1692200000000,
 	AddTenantToTag1755851971760,
 	AddTenantIdToVariables1693929000000,
+	AddTenantToCredentials1755852500000,
 ];

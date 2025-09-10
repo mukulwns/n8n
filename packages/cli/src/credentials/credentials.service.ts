@@ -70,6 +70,152 @@ export class CredentialsService {
 		private readonly credentialsFinderService: CredentialsFinderService,
 	) {}
 
+	// async getMany(
+	// 	user: User,
+	// 	{
+	// 		listQueryOptions = {},
+	// 		includeScopes = false,
+	// 		includeData = false,
+	// 		onlySharedWithMe = false,
+	// 	}: {
+	// 		listQueryOptions?: ListQuery.Options & { includeData?: boolean };
+	// 		includeScopes?: boolean;
+	// 		includeData?: boolean;
+	// 		onlySharedWithMe?: boolean;
+	// 	} = {},
+	// ) {
+	// 	const returnAll = hasGlobalScope(user, 'credential:list');
+	// 	const isDefaultSelect = !listQueryOptions.select;
+	// 	const projectId =
+	// 		typeof listQueryOptions.filter?.projectId === 'string'
+	// 			? listQueryOptions.filter.projectId
+	// 			: undefined;
+
+	// 	if (onlySharedWithMe) {
+	// 		listQueryOptions.filter = {
+	// 			...listQueryOptions.filter,
+	// 			withRole: 'credential:user',
+	// 			user,
+	// 		};
+	// 	}
+
+	// 	if (includeData) {
+	// 		// We need the scopes to check if we're allowed to include the decrypted
+	// 		// data.
+	// 		// Only if the user has the `credential:update` scope the user is allowed
+	// 		// to get the data.
+	// 		includeScopes = true;
+	// 		listQueryOptions.includeData = true;
+	// 	}
+
+	// 	if (returnAll) {
+	// 		let project: Project | undefined;
+
+	// 		if (projectId) {
+	// 			try {
+	// 				project = await this.projectService.getProject(projectId);
+	// 			} catch {}
+	// 		}
+
+	// 		if (project?.type === 'personal') {
+	// 			listQueryOptions.filter = {
+	// 				...listQueryOptions.filter,
+	// 				withRole: 'credential:owner',
+	// 			};
+	// 		}
+
+	// 		let credentials = await this.credentialsRepository.findMany(listQueryOptions);
+
+	// 		if (isDefaultSelect) {
+	// 			// Since we're filtering using project ID as part of the relation,
+	// 			// we end up filtering out all the other relations, meaning that if
+	// 			// it's shared to a project, it won't be able to find the home project.
+	// 			// To solve this, we have to get all the relation now, even though
+	// 			// we're deleting them later.
+	// 			if (
+	// 				(listQueryOptions.filter?.shared as { projectId?: string })?.projectId ??
+	// 				onlySharedWithMe
+	// 			) {
+	// 				const relations = await this.sharedCredentialsRepository.getAllRelationsForCredentials(
+	// 					credentials.map((c) => c.id),
+	// 				);
+	// 				credentials.forEach((c) => {
+	// 					c.shared = relations.filter((r) => r.credentialsId === c.id);
+	// 				});
+	// 			}
+	// 			credentials = credentials.map((c) => this.ownershipService.addOwnedByAndSharedWith(c));
+	// 		}
+
+	// 		if (includeScopes) {
+	// 			const projectRelations = await this.projectService.getProjectRelationsForUser(user);
+	// 			credentials = credentials.map((c) => this.roleService.addScopes(c, user, projectRelations));
+	// 		}
+
+	// 		if (includeData) {
+	// 			credentials = credentials.map((c: CredentialsEntity & ScopesField) => {
+	// 				const data = c.scopes.includes('credential:update') ? this.decrypt(c) : undefined;
+	// 				// We never want to expose the oauthTokenData to the frontend, but it
+	// 				// expects it to check if the credential is already connected.
+	// 				if (data?.oauthTokenData) {
+	// 					data.oauthTokenData = true;
+	// 				}
+
+	// 				return {
+	// 					...c,
+	// 					data,
+	// 				} as unknown as CredentialsEntity;
+	// 			});
+	// 		}
+
+	// 		return credentials;
+	// 	}
+
+	// 	const ids = await this.credentialsFinderService.getCredentialIdsByUserAndRole([user.id], {
+	// 		scopes: ['credential:read'],
+	// 	});
+
+	// 	let credentials = await this.credentialsRepository.findMany(
+	// 		listQueryOptions,
+	// 		ids, // only accessible credentials
+	// 	);
+
+	// 	if (isDefaultSelect) {
+	// 		// Since we're filtering using project ID as part of the relation,
+	// 		// we end up filtering out all the other relations, meaning that if
+	// 		// it's shared to a project, it won't be able to find the home project.
+	// 		// To solve this, we have to get all the relation now, even though
+	// 		// we're deleting them later.
+	// 		if (
+	// 			(listQueryOptions.filter?.shared as { projectId?: string })?.projectId ??
+	// 			onlySharedWithMe
+	// 		) {
+	// 			const relations = await this.sharedCredentialsRepository.getAllRelationsForCredentials(
+	// 				credentials.map((c) => c.id),
+	// 			);
+	// 			credentials.forEach((c) => {
+	// 				c.shared = relations.filter((r) => r.credentialsId === c.id);
+	// 			});
+	// 		}
+
+	// 		credentials = credentials.map((c) => this.ownershipService.addOwnedByAndSharedWith(c));
+	// 	}
+
+	// 	if (includeScopes) {
+	// 		const projectRelations = await this.projectService.getProjectRelationsForUser(user);
+	// 		credentials = credentials.map((c) => this.roleService.addScopes(c, user, projectRelations));
+	// 	}
+
+	// 	if (includeData) {
+	// 		credentials = credentials.map((c: CredentialsEntity & ScopesField) => {
+	// 			return {
+	// 				...c,
+	// 				data: c.scopes.includes('credential:update') ? this.decrypt(c) : undefined,
+	// 			} as unknown as CredentialsEntity;
+	// 		});
+	// 	}
+
+	// 	return credentials;
+	// }
 	async getMany(
 		user: User,
 		{
@@ -77,19 +223,31 @@ export class CredentialsService {
 			includeScopes = false,
 			includeData = false,
 			onlySharedWithMe = false,
+			tenantId,
 		}: {
 			listQueryOptions?: ListQuery.Options & { includeData?: boolean };
 			includeScopes?: boolean;
 			includeData?: boolean;
 			onlySharedWithMe?: boolean;
+			tenantId?: string; // 👈 required tenantId
 		} = {},
 	) {
+		if (!tenantId) {
+			throw new BadRequestError('TenantId is required');
+		}
+
 		const returnAll = hasGlobalScope(user, 'credential:list');
 		const isDefaultSelect = !listQueryOptions.select;
 		const projectId =
 			typeof listQueryOptions.filter?.projectId === 'string'
 				? listQueryOptions.filter.projectId
 				: undefined;
+
+		// Always enforce tenant filter 👇
+		listQueryOptions.filter = {
+			...(listQueryOptions.filter ?? {}),
+			tenantId,
+		};
 
 		if (onlySharedWithMe) {
 			listQueryOptions.filter = {
@@ -100,14 +258,11 @@ export class CredentialsService {
 		}
 
 		if (includeData) {
-			// We need the scopes to check if we're allowed to include the decrypted
-			// data.
-			// Only if the user has the `credential:update` scope the user is allowed
-			// to get the data.
 			includeScopes = true;
 			listQueryOptions.includeData = true;
 		}
 
+		// --- Global scope case
 		if (returnAll) {
 			let project: Project | undefined;
 
@@ -124,14 +279,10 @@ export class CredentialsService {
 				};
 			}
 
+			// 🔒 tenant scoped credentials
 			let credentials = await this.credentialsRepository.findMany(listQueryOptions);
 
 			if (isDefaultSelect) {
-				// Since we're filtering using project ID as part of the relation,
-				// we end up filtering out all the other relations, meaning that if
-				// it's shared to a project, it won't be able to find the home project.
-				// To solve this, we have to get all the relation now, even though
-				// we're deleting them later.
 				if (
 					(listQueryOptions.filter?.shared as { projectId?: string })?.projectId ??
 					onlySharedWithMe
@@ -154,37 +305,24 @@ export class CredentialsService {
 			if (includeData) {
 				credentials = credentials.map((c: CredentialsEntity & ScopesField) => {
 					const data = c.scopes.includes('credential:update') ? this.decrypt(c) : undefined;
-					// We never want to expose the oauthTokenData to the frontend, but it
-					// expects it to check if the credential is already connected.
 					if (data?.oauthTokenData) {
 						data.oauthTokenData = true;
 					}
-
-					return {
-						...c,
-						data,
-					} as unknown as CredentialsEntity;
+					return { ...c, data } as unknown as CredentialsEntity;
 				});
 			}
 
 			return credentials;
 		}
 
+		// --- Restricted scope case
 		const ids = await this.credentialsFinderService.getCredentialIdsByUserAndRole([user.id], {
 			scopes: ['credential:read'],
 		});
 
-		let credentials = await this.credentialsRepository.findMany(
-			listQueryOptions,
-			ids, // only accessible credentials
-		);
+		let credentials = await this.credentialsRepository.findMany(listQueryOptions, ids);
 
 		if (isDefaultSelect) {
-			// Since we're filtering using project ID as part of the relation,
-			// we end up filtering out all the other relations, meaning that if
-			// it's shared to a project, it won't be able to find the home project.
-			// To solve this, we have to get all the relation now, even though
-			// we're deleting them later.
 			if (
 				(listQueryOptions.filter?.shared as { projectId?: string })?.projectId ??
 				onlySharedWithMe
@@ -216,7 +354,6 @@ export class CredentialsService {
 
 		return credentials;
 	}
-
 	/**
 	 * @param user The user making the request
 	 * @param options.workflowId The workflow that is being edited
@@ -702,6 +839,42 @@ export class CredentialsService {
 	 * Create a new credential in user's account and return it along the scopes
 	 * If a projectId is send, then it also binds the credential to that specific project
 	 */
+	// async createUnmanagedCredential(dto: CreateCredentialDto, user: User) {
+	// 	return await this.createCredential({ ...dto, isManaged: false }, user);
+	// }
+
+	// /**
+	//  * Create a new managed credential in user's account and return it along the scopes.
+	//  * Managed credentials are managed by n8n and cannot be edited by the user.
+	//  */
+	// async createManagedCredential(dto: CreateCredentialDto, user: User) {
+	// 	return await this.createCredential({ ...dto, isManaged: true }, user);
+	// }
+
+	// private async createCredential(opts: CreateCredentialOptions, user: User) {
+	// 	const encryptedCredential = this.createEncryptedData({
+	// 		id: null,
+	// 		name: opts.name,
+	// 		type: opts.type,
+	// 		data: opts.data as ICredentialDataDecryptedObject,
+	// 	});
+
+	// 	const credentialEntity = this.credentialsRepository.create({
+	// 		...encryptedCredential,
+	// 		isManaged: opts.isManaged,
+	// 	});
+
+	// 	const { shared, ...credential } = await this.save(
+	// 		credentialEntity,
+	// 		encryptedCredential,
+	// 		user,
+	// 		opts.projectId,
+	// 	);
+
+	// 	const scopes = await this.getCredentialScopes(user, credential.id);
+
+	// 	return { ...credential, scopes };
+	// }
 	async createUnmanagedCredential(dto: CreateCredentialDto, user: User) {
 		return await this.createCredential({ ...dto, isManaged: false }, user);
 	}
@@ -715,6 +888,7 @@ export class CredentialsService {
 	}
 
 	private async createCredential(opts: CreateCredentialOptions, user: User) {
+		// 🔐 Encrypt credential data
 		const encryptedCredential = this.createEncryptedData({
 			id: null,
 			name: opts.name,
@@ -722,11 +896,14 @@ export class CredentialsService {
 			data: opts.data as ICredentialDataDecryptedObject,
 		});
 
+		// ✅ Attach tenantId here
 		const credentialEntity = this.credentialsRepository.create({
 			...encryptedCredential,
 			isManaged: opts.isManaged,
+			tenantId: user.tenantId || '', // 👈 force tenantId always set
 		});
 
+		// Save in DB
 		const { shared, ...credential } = await this.save(
 			credentialEntity,
 			encryptedCredential,
@@ -734,6 +911,7 @@ export class CredentialsService {
 			opts.projectId,
 		);
 
+		// Get scopes
 		const scopes = await this.getCredentialScopes(user, credential.id);
 
 		return { ...credential, scopes };

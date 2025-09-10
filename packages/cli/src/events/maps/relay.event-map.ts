@@ -294,6 +294,7 @@ export type RelayEventMap = {
 		publicApi: boolean;
 		projectId?: string;
 		projectType?: string;
+		tenantId?: string;
 	};
 
 	'credentials-shared': {

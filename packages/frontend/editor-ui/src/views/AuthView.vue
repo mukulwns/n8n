@@ -42,16 +42,20 @@ const onSecondaryClick = () => {
 	emit('secondaryClick');
 };
 
-const toggleSetupPage = async () => {
+// 👇 Single button click handler (with toggle)
+const onPrimaryClick = async () => {
 	try {
 		await settingsStore.toggleShowSetupOnFirstLoad();
-		toast.showMessage({
-			title: 'Success',
-			message: `Setup page ${settingsStore.showSetupPage ? 'enabled' : 'disabled'}`,
-			type: 'success',
-		});
+
+		if (settingsStore.showSetupPage) {
+			// setup page enabled → redirect to setup
+			router.push({ name: VIEWS.SETUP });
+		} else {
+			// setup page disabled → redirect to signin
+			router.push({ name: VIEWS.SIGNIN });
+		}
 	} catch (error) {
-		toast.showError(error, 'Error toggling setup page');
+		toast.showError(error, 'Error switching page');
 	}
 };
 
@@ -63,9 +67,11 @@ const {
 <template>
 	<div :class="$style.container">
 		<Logo location="authView" :release-channel="releaseChannel" />
+
 		<div v-if="subtitle" :class="$style.textContainer">
 			<N8nText size="large">{{ subtitle }}</N8nText>
 		</div>
+
 		<div :class="$style.formContainer">
 			<N8nFormBox
 				v-bind="form"
@@ -76,14 +82,10 @@ const {
 				@update="onUpdate"
 			>
 				<SSOLogin v-if="withSso" />
-				<N8nButton
-					:disabled="formLoading"
-					@click="router.push({ name: settingsStore.showSetupPage ? VIEWS.SETUP : VIEWS.SIGNIN })"
-				>
-					{{ settingsStore.showSetupPage ? 'Setup New Tenant' : 'Sign In' }}
-				</N8nButton>
-				<N8nButton :disabled="formLoading" @click="toggleSetupPage">
-					{{ settingsStore.showSetupPage ? 'Disable Setup Page' : 'Enable Setup Page' }}
+
+				<!-- 👇 Only one dynamic button -->
+				<N8nButton :disabled="formLoading" @click="onPrimaryClick">
+					{{ settingsStore.showSetupPage ? 'Login Page' : 'Setup New Tenant' }}
 				</N8nButton>
 			</N8nFormBox>
 		</div>

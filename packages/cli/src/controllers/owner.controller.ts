@@ -178,7 +178,12 @@ export class OwnerController {
 			userId: savedUser.id,
 			tenantId: savedTenant.id,
 		});
-
+		await this.settingsRepository.update(
+			{ key: 'userManagement.isInstanceOwnerSetUp' },
+			{ value: JSON.stringify(true) },
+		);
+		config.set('userManagement.isInstanceOwnerSetUp', true);
+		this.logger.debug('Setting isInstanceOwnerSetUp updated successfully');
 		return { user: publicUser, tenantId: savedTenant.id };
 	}
 	@Post('/dismiss-banner')

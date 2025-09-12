@@ -9,12 +9,14 @@ import { validate as uuidValidate } from 'uuid';
 export async function getUser(data: {
 	withIdentifier: string;
 	includeRole?: boolean;
+	tenantId?: string | null;
 }): Promise<User | null> {
 	return await Container.get(UserRepository)
 		.findOne({
 			where: {
 				...(uuidValidate(data.withIdentifier) && { id: data.withIdentifier }),
 				...(!uuidValidate(data.withIdentifier) && { email: data.withIdentifier }),
+				...(data.tenantId ? { tenantId: data.tenantId } : {}), // added tenant id filter
 			},
 		})
 		.then((user) => {
@@ -28,11 +30,12 @@ export async function getAllUsersAndCount(data: {
 	limit?: number;
 	offset?: number;
 	in?: string[];
+	tenantId?: string | null;
 }): Promise<[User[], number]> {
-	const { in: _in } = data;
+	const { in: _in, tenantId } = data;
 
 	const users = await Container.get(UserRepository).find({
-		where: { ...(_in && { id: In(_in) }) },
+		where: { ...(_in && { id: In(_in) }), ...(tenantId ? { tenantId } : {}) }, // tenant id filter
 		skip: data.offset,
 		take: data.limit,
 	});

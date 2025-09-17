@@ -305,8 +305,8 @@ export class ProjectService {
 	 * Throws if you the project is a personal project.
 	 * Throws if the relations contain `project:personalOwner`.
 	 */
-	async addUsersToProject(projectId: string, relations: Relation[]) {
-		const project = await this.getTeamProjectWithRelations(projectId);
+	async addUsersToProject(projectId: string, relations: Relation[], tenantId?: string) {
+		const project = await this.getTeamProjectWithRelations(projectId, tenantId);
 		this.checkRolesLicensed(project, relations);
 
 		if (project.type === 'personal') {
@@ -322,9 +322,13 @@ export class ProjectService {
 		);
 	}
 
-	private async getTeamProjectWithRelations(projectId: string) {
+	private async getTeamProjectWithRelations(projectId: string, tenantId?: string) {
 		const project = await this.projectRepository.findOne({
-			where: { id: projectId, type: 'team' },
+			where: {
+				id: projectId,
+				type: 'team',
+				...(tenantId ? { tenantId } : {}), // tenent id filter
+			},
 			relations: { projectRelations: true },
 		});
 		ProjectNotFoundError.isDefinedAndNotNull(project, projectId);
@@ -360,12 +364,17 @@ export class ProjectService {
 		await this.projectRelationRepository.delete({ projectId: project.id, userId });
 	}
 
-	async changeUserRoleInProject(projectId: string, userId: string, role: ProjectRole) {
+	async changeUserRoleInProject(
+		projectId: string,
+		userId: string,
+		role: ProjectRole,
+		tenantId: string,
+	) {
 		if (role === 'project:personalOwner') {
 			throw new ForbiddenError('Personal owner cannot be added to a team project.');
 		}
 
-		const project = await this.getTeamProjectWithRelations(projectId);
+		const project = await this.getTeamProjectWithRelations(projectId, tenantId);
 		ProjectNotFoundError.isDefinedAndNotNull(project, projectId);
 
 		const projectUserExists = project.projectRelations.some((r) => r.userId === userId);
@@ -457,9 +466,11 @@ export class ProjectService {
 	}
 
 	async getProject(projectId: string, tenantId?: string): Promise<Project> {
+		// also add tenant id check
 		return await this.projectRepository.findOneOrFail({
 			where: {
 				id: projectId,
+				tenantId,
 			},
 		});
 	}

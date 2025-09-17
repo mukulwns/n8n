@@ -21,6 +21,7 @@ import {
 	validCursor,
 } from '../../shared/middlewares/global.middleware';
 import { encodeNextCursor } from '../../shared/services/pagination.service';
+import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 
 type GetAll = PaginatedRequest;
 export = {
@@ -31,6 +32,11 @@ export = {
 			const payload = CreateProjectDto.safeParse(req.body);
 			if (payload.error) {
 				return res.status(400).json(payload.error.errors[0]);
+			}
+			// adding tenant id in the request object
+			const tenantId = req.user?.tenantId;
+			if (tenantId) {
+				req.tenantId = tenantId;
 			}
 
 			const project = await Container.get(ProjectController).createProject(req, res, payload.data);
@@ -45,6 +51,12 @@ export = {
 			const payload = UpdateProjectDto.safeParse(req.body);
 			if (payload.error) {
 				return res.status(400).json(payload.error.errors[0]);
+			}
+
+			// adding tenant id in the request object
+			const tenantId = req.user?.tenantId;
+			if (tenantId) {
+				req.tenantId = tenantId;
 			}
 
 			await Container.get(ProjectController).updateProject(
@@ -66,6 +78,12 @@ export = {
 				return res.status(400).json(query.error.errors[0]);
 			}
 
+			// adding tenant id in the request object
+			const tenantId = req.user?.tenantId;
+			if (tenantId) {
+				req.tenantId = tenantId;
+			}
+
 			await Container.get(ProjectController).deleteProject(
 				req,
 				res,
@@ -83,7 +101,9 @@ export = {
 		async (req: GetAll, res: Response) => {
 			const { offset = 0, limit = 100 } = req.query;
 
+			const tenantId = req.user?.tenantId;
 			const [projects, count] = await Container.get(ProjectRepository).findAndCount({
+				where: { ...(tenantId ? { tenantId } : {}) }, // adding tenant id filter in the list
 				skip: offset,
 				take: limit,
 			});
@@ -106,11 +126,13 @@ export = {
 			if (payload.error) {
 				return res.status(400).json(payload.error.errors[0]);
 			}
+			const tenantId = req.user?.tenantId;
 
 			try {
 				await Container.get(ProjectService).addUsersToProject(
 					req.params.projectId,
 					payload.data.relations,
+					...(tenantId ? [tenantId] : []),
 				);
 			} catch (error) {
 				if (error instanceof ResponseError) {
@@ -133,8 +155,17 @@ export = {
 
 			const { projectId, userId } = req.params;
 			const { role } = payload.data;
+			const tenantId = req.user?.tenantId;
+			if (!tenantId) {
+				throw new BadRequestError('Tenant ID missing for user');
+			}
 			try {
-				await Container.get(ProjectService).changeUserRoleInProject(projectId, userId, role);
+				await Container.get(ProjectService).changeUserRoleInProject(
+					projectId,
+					userId,
+					role,
+					tenantId,
+				);
 			} catch (error) {
 				if (error instanceof ResponseError) {
 					return res.status(error.httpStatusCode).send({ message: error.message });

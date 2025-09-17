@@ -68,8 +68,12 @@ export class VariablesController {
 		const id = req.params.id;
 		const variable = req.body;
 		delete variable.id;
+		const tenantId = req.user?.tenantId;
+		if (!tenantId) {
+			throw new BadRequestError('Tenant ID missing for user');
+		}
 		try {
-			return await this.variablesService.update(id, variable);
+			return await this.variablesService.update(id, variable, tenantId);
 		} catch (error) {
 			if (error instanceof VariableCountLimitReachedError) {
 				throw new BadRequestError(error.message);
@@ -84,7 +88,11 @@ export class VariablesController {
 	@GlobalScope('variable:delete')
 	async deleteVariable(req: VariablesRequest.Delete) {
 		const id = req.params.id;
-		await this.variablesService.delete(id);
+		const tenantId = req.user?.tenantId;
+		if (!tenantId) {
+			throw new BadRequestError('Tenant ID missing for user');
+		}
+		await this.variablesService.delete(id, tenantId);
 
 		return true;
 	}

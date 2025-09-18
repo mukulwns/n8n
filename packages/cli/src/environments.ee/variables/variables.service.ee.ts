@@ -1,4 +1,4 @@
-import type { Variables } from '@n8n/db';
+import type { User, Variables } from '@n8n/db';
 import { generateNanoId, VariablesRepository } from '@n8n/db';
 import { Service } from '@n8n/di';
 
@@ -7,6 +7,7 @@ import { VariableValidationError } from '@/errors/variable-validation.error';
 import { EventService } from '@/events/event.service';
 import { License } from '@/license';
 import { CacheService } from '@/services/cache/cache.service';
+import { DeepPartial } from '@n8n/typeorm';
 
 @Service()
 export class VariablesService {
@@ -93,9 +94,28 @@ export class VariablesService {
 		return saveResult;
 	}
 
+	// async update(id: string, variable: Omit<Variables, 'id'>): Promise<Variables> {
+	// 	this.validateVariable(variable);
+	// 	await this.variablesRepository.update(id, variable);
+	// 	await this.updateCache();
+	// 	return (await this.getCached(id))!;
+	// }
+
 	async update(id: string, variable: Omit<Variables, 'id'>): Promise<Variables> {
 		this.validateVariable(variable);
-		await this.variablesRepository.update(id, variable);
+
+		// Use DeepPartial here
+		const variableData: DeepPartial<Variables> = {
+			...variable,
+			tenant: variable.tenant
+				? {
+						...variable.tenant,
+						users: variable.tenant.users?.map((u) => ({ id: u.id })) as DeepPartial<User>[], // Correct type for users
+					}
+				: undefined,
+		};
+
+		await this.variablesRepository.update(id, variableData);
 		await this.updateCache();
 		return (await this.getCached(id))!;
 	}

@@ -13,6 +13,7 @@ import { ProjectService } from '@/services/project.service.ee';
 
 import { CredentialsFinderService } from './credentials-finder.service';
 import { CredentialsService } from './credentials.service';
+import { ForbiddenError } from '@/errors/response-errors/forbidden.error';
 
 @Service()
 export class EnterpriseCredentialsService {
@@ -124,7 +125,67 @@ export class EnterpriseCredentialsService {
 		return { ...rest };
 	}
 
-	async transferOne(user: User, credentialId: string, destinationProjectId: string) {
+	// async transferOne(user: User, credentialId: string, destinationProjectId: string) {
+	// 	// 1. get credential
+	// 	const credential = await this.credentialsFinderService.findCredentialForUser(
+	// 		credentialId,
+	// 		user,
+	// 		['credential:move'],
+	// 	);
+	// 	NotFoundError.isDefinedAndNotNull(
+	// 		credential,
+	// 		`Could not find the credential with the id "${credentialId}". Make sure you have the permission to move it.`,
+	// 	);
+
+	// 	// 2. get owner-sharing
+	// 	const ownerSharing = credential.shared.find((s) => s.role === 'credential:owner');
+	// 	NotFoundError.isDefinedAndNotNull(
+	// 		ownerSharing,
+	// 		`Could not find owner for credential "${credential.id}"`,
+	// 	);
+
+	// 	// 3. get source project
+	// 	const sourceProject = ownerSharing.project;
+
+	// 	// 4. get destination project
+	// 	const destinationProject = await this.projectService.getProjectWithScope(
+	// 		user,
+	// 		destinationProjectId,
+	// 		['credential:create'],
+	// 	);
+	// 	NotFoundError.isDefinedAndNotNull(
+	// 		destinationProject,
+	// 		`Could not find project with the id "${destinationProjectId}". Make sure you have the permission to create credentials in it.`,
+	// 	);
+
+	// 	// 5. checks
+	// 	if (sourceProject.id === destinationProject.id) {
+	// 		throw new TransferCredentialError(
+	// 			"You can't transfer a credential into the project that's already owning it.",
+	// 		);
+	// 	}
+
+	// 	await this.sharedCredentialsRepository.manager.transaction(async (trx) => {
+	// 		// 6. transfer the credential
+	// 		// remove all sharings
+	// 		await trx.remove(credential.shared);
+
+	// 		// create new owner-sharing
+	// 		await trx.save(
+	// 			trx.create(SharedCredentials, {
+	// 				credentialsId: credential.id,
+	// 				projectId: destinationProject.id,
+	// 				role: 'credential:owner',
+	// 			}),
+	// 		);
+	// 	});
+	// }
+	async transferOne(
+		user: User,
+		credentialId: string,
+		destinationProjectId: string,
+		tenantId: string, // ✅ tenantId inject from req.user.tenantId
+	) {
 		// 1. get credential
 		const credential = await this.credentialsFinderService.findCredentialForUser(
 			credentialId,
@@ -136,6 +197,11 @@ export class EnterpriseCredentialsService {
 			`Could not find the credential with the id "${credentialId}". Make sure you have the permission to move it.`,
 		);
 
+		// ✅ Tenant check for credential
+		if (credential.tenantId !== tenantId) {
+			throw new ForbiddenError(`Credential "${credentialId}" does not belong to your tenant.`);
+		}
+
 		// 2. get owner-sharing
 		const ownerSharing = credential.shared.find((s) => s.role === 'credential:owner');
 		NotFoundError.isDefinedAndNotNull(
@@ -145,6 +211,9 @@ export class EnterpriseCredentialsService {
 
 		// 3. get source project
 		const sourceProject = ownerSharing.project;
+		if (sourceProject.tenantId !== tenantId) {
+			throw new ForbiddenError(`Source project does not belong to your tenant.`);
+		}
 
 		// 4. get destination project
 		const destinationProject = await this.projectService.getProjectWithScope(
@@ -157,6 +226,11 @@ export class EnterpriseCredentialsService {
 			`Could not find project with the id "${destinationProjectId}". Make sure you have the permission to create credentials in it.`,
 		);
 
+		// ✅ Tenant check for destination project
+		if (destinationProject.tenantId !== tenantId) {
+			throw new ForbiddenError(`Destination project does not belong to your tenant.`);
+		}
+
 		// 5. checks
 		if (sourceProject.id === destinationProject.id) {
 			throw new TransferCredentialError(
@@ -164,8 +238,8 @@ export class EnterpriseCredentialsService {
 			);
 		}
 
+		// 6. transfer the credential
 		await this.sharedCredentialsRepository.manager.transaction(async (trx) => {
-			// 6. transfer the credential
 			// remove all sharings
 			await trx.remove(credential.shared);
 
@@ -175,6 +249,8 @@ export class EnterpriseCredentialsService {
 					credentialsId: credential.id,
 					projectId: destinationProject.id,
 					role: 'credential:owner',
+					// ✅ tenant enforced
+					// tenantId,
 				}),
 			);
 		});

@@ -57,10 +57,12 @@ export class EventBusController {
 	@Get('/destination')
 	@GlobalScope('eventBusDestination:list')
 	async getDestination(req: express.Request): Promise<MessageEventBusDestinationOptions[]> {
+		const tenantId = (req as AuthenticatedRequest).user.tenantId;
+
 		if (isWithIdString(req.query)) {
-			return await this.eventBus.findDestination(req.query.id);
+			return await this.eventBus.findDestination(req.query.id, tenantId);
 		} else {
-			return await this.eventBus.findDestination();
+			return await this.eventBus.findDestination(undefined, tenantId); // ✅ pass undefined for id
 		}
 	}
 
@@ -68,44 +70,68 @@ export class EventBusController {
 	@Post('/destination')
 	@GlobalScope('eventBusDestination:create')
 	async postDestination(req: AuthenticatedRequest): Promise<any> {
+		const tenantId = req.user?.tenantId; // Adjust based on your auth implementation
+		if (!tenantId) {
+			throw new BadRequestError('Tenant ID is missing');
+		}
+
 		let result: MessageEventBusDestination | undefined;
+
 		if (isMessageEventBusDestinationOptions(req.body)) {
 			switch (req.body.__type) {
 				case MessageEventBusDestinationTypeNames.sentry:
 					if (isMessageEventBusDestinationSentryOptions(req.body)) {
 						result = await this.eventBus.addDestination(
-							new MessageEventBusDestinationSentry(this.eventBus, req.body),
+							new MessageEventBusDestinationSentry(this.eventBus, {
+								...req.body,
+								tenantId,
+							}),
 						);
 					}
 					break;
+
 				case MessageEventBusDestinationTypeNames.webhook:
 					if (isMessageEventBusDestinationWebhookOptions(req.body)) {
 						result = await this.eventBus.addDestination(
-							new MessageEventBusDestinationWebhook(this.eventBus, req.body),
+							new MessageEventBusDestinationWebhook(this.eventBus, {
+								...req.body,
+								tenantId,
+							}),
 						);
 					}
 					break;
+
 				case MessageEventBusDestinationTypeNames.syslog:
 					if (isMessageEventBusDestinationSyslogOptions(req.body)) {
 						result = await this.eventBus.addDestination(
-							new MessageEventBusDestinationSyslog(this.eventBus, req.body),
+							new MessageEventBusDestinationSyslog(this.eventBus, {
+								...req.body,
+								tenantId,
+							}),
 						);
 					}
 					break;
+
 				default:
 					throw new BadRequestError(
 						`Body is missing ${req.body.__type} options or type ${req.body.__type} is unknown`,
 					);
 			}
+
 			if (result) {
+				console.log('result_____', result);
 				await result.saveToDb();
 				return {
 					...result.serialize(),
 					eventBusInstance: undefined,
+
+					// Don’t leak full instance
 				};
 			}
+
 			throw new BadRequestError('There was an error adding the destination');
 		}
+
 		throw new BadRequestError('Body is not configuring MessageEventBusDestinationOptions');
 	}
 
@@ -113,6 +139,7 @@ export class EventBusController {
 	@Get('/testmessage')
 	@GlobalScope('eventBusDestination:test')
 	async sendTestMessage(req: express.Request): Promise<boolean> {
+		console.log(req, '------------');
 		if (isWithIdString(req.query)) {
 			return await this.eventBus.testDestination(req.query.id);
 		}
@@ -124,8 +151,10 @@ export class EventBusController {
 	@GlobalScope('eventBusDestination:delete')
 	async deleteDestination(req: AuthenticatedRequest) {
 		if (isWithIdString(req.query)) {
-			await this.eventBus.removeDestination(req.query.id);
-			return await this.eventBus.deleteDestination(req.query.id);
+			const tenantId = req.user.tenantId;
+			await this.eventBus.removeDestination(req.query.id, true, tenantId);
+			return await this.eventBus.deleteDestination(req.query.id, tenantId);
+			// return await this.eventBus.deleteDestination(req.query.id);
 		} else {
 			throw new BadRequestError('Query is missing id');
 		}

@@ -28,11 +28,13 @@ export async function getCredentials(credentialId: string): Promise<ICredentials
 export async function getSharedCredentials(
 	userId: string,
 	credentialId: string,
+	// tenantId?: string, // 🔹 pass tenantId
 ): Promise<SharedCredentials | null> {
 	return await Container.get(SharedCredentialsRepository).findOne({
 		where: {
 			project: { projectRelations: { userId } },
 			credentialsId: credentialId,
+			// tenantId, // 🔹 enforce tenant scope
 		},
 		relations: ['credentials'],
 	});
@@ -40,10 +42,14 @@ export async function getSharedCredentials(
 
 export async function createCredential(
 	properties: CredentialRequest.CredentialProperties,
+	tenantId?: string, // alag se tenantId pass karenge
 ): Promise<CredentialsEntity> {
 	const newCredential = new CredentialsEntity();
 
 	Object.assign(newCredential, properties);
+
+	// tenantId backend se inject kar do
+	newCredential.tenantId = tenantId || '';
 
 	return newCredential;
 }
@@ -52,10 +58,15 @@ export async function saveCredential(
 	credential: CredentialsEntity,
 	user: User,
 	encryptedData: ICredentialsDb,
+	tenantId?: string, // ✅ added tenantId param
 ): Promise<CredentialsEntity> {
 	const projectRepository = Container.get(ProjectRepository);
 	const { manager: dbManager } = projectRepository;
 	const result = await dbManager.transaction(async (transactionManager) => {
+		// ✅ tenantId assign before save
+		if (tenantId) {
+			credential.tenantId = tenantId;
+		}
 		const savedCredential = await transactionManager.save<CredentialsEntity>(credential);
 
 		savedCredential.data = credential.data;
@@ -71,6 +82,7 @@ export async function saveCredential(
 			role: 'credential:owner',
 			credentials: savedCredential,
 			projectId: personalProject.id,
+			tenantId, // ✅ tenantId on sharedCredentials also
 		});
 
 		await transactionManager.save<SharedCredentials>(newSharedCredential);

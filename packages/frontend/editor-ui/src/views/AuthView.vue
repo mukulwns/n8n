@@ -84,9 +84,17 @@ const {
 				<SSOLogin v-if="withSso" />
 
 				<!-- 👇 Only one dynamic button -->
-				<N8nButton :disabled="formLoading" @click="onPrimaryClick">
-					{{ settingsStore.showSetupPage ? 'Login Page' : 'Setup New Tenant' }}
-				</N8nButton>
+				<div>
+					<N8nButton
+						size="large"
+						type="primary"
+						outline
+						:disabled="formLoading"
+						@click="onPrimaryClick"
+					>
+						{{ settingsStore.showSetupPage ? 'Login Page' : 'Setup New Tenant' }}
+					</N8nButton>
+				</div>
 			</N8nFormBox>
 		</div>
 	</div>

@@ -66,6 +66,7 @@ export declare namespace CredentialRequest {
 		data: ICredentialDataDecryptedObject;
 		projectId?: string;
 		isManaged?: boolean;
+		tenantId?: string;
 	}>;
 
 	type Get = AuthenticatedRequest<{ credentialId: string }, {}, {}, Record<string, string>>;
@@ -227,7 +228,7 @@ export declare namespace LicenseRequest {
 // ----------------------------------
 //
 export declare namespace VariablesRequest {
-	type CreateUpdatePayload = Omit<Variables, 'id'> & { id?: unknown };
+	type CreateUpdatePayload = Omit<Variables, 'id'> & { id?: string };
 
 	type GetAll = AuthenticatedRequest;
 	type Get = AuthenticatedRequest<{ id: string }, {}, {}, {}>;

@@ -165,7 +165,6 @@ export class CredentialsController {
 		@Body payload: CreateCredentialDto,
 	) {
 		// ✅ inject tenantId
-		console.log(req.user.tenantId, '----------');
 		const tenantId = req.user.tenantId || '';
 		const newCredential = await this.credentialsService.createUnmanagedCredential(
 			{ ...payload, tenantId: tenantId },
@@ -360,6 +359,7 @@ export class CredentialsController {
 			req.user,
 			req.params.credentialId,
 			body.destinationProjectId,
+			req.user.tenantId || '',
 		);
 	}
 }

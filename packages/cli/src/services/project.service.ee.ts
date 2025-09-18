@@ -305,8 +305,30 @@ export class ProjectService {
 	 * Throws if you the project is a personal project.
 	 * Throws if the relations contain `project:personalOwner`.
 	 */
-	async addUsersToProject(projectId: string, relations: Relation[]) {
+	// async addUsersToProject(projectId: string, relations: Relation[], tenantId?: string) {
+	// 	const project = await this.getTeamProjectWithRelations(projectId);
+	// 	this.checkRolesLicensed(project, relations);
+
+	// 	if (project.type === 'personal') {
+	// 		throw new ForbiddenError("Can't add users to personal projects.");
+	// 	}
+
+	// 	if (relations.some((r) => r.role === 'project:personalOwner')) {
+	// 		throw new ForbiddenError("Can't add a personalOwner to a team project.");
+	// 	}
+
+	// 	await this.projectRelationRepository.save(
+	// 		relations.map((relation) => ({ projectId, ...relation })),
+	// 	);
+	// }
+	async addUsersToProject(projectId: string, relations: Relation[], tenantId?: string) {
 		const project = await this.getTeamProjectWithRelations(projectId);
+
+		// ✅ tenant check add karo
+		if (tenantId && project.tenantId !== tenantId) {
+			throw new ForbiddenError('Project does not belong to this tenant');
+		}
+
 		this.checkRolesLicensed(project, relations);
 
 		if (project.type === 'personal') {
@@ -349,18 +371,38 @@ export class ProjectService {
 		);
 	}
 
-	async deleteUserFromProject(projectId: string, userId: string) {
-		const project = await this.getTeamProjectWithRelations(projectId);
+	// async deleteUserFromProject(projectId: string, userId: string) {
+	// 	const project = await this.getTeamProjectWithRelations(projectId);
 
-		// Prevent project owner from being removed
-		if (this.isUserProjectOwner(project, userId)) {
-			throw new ForbiddenError('Project owner cannot be removed from the project');
-		}
+	// 	// Prevent project owner from being removed
+	// 	if (this.isUserProjectOwner(project, userId)) {
+	// 		throw new ForbiddenError('Project owner cannot be removed from the project');
+	// 	}
 
-		await this.projectRelationRepository.delete({ projectId: project.id, userId });
-	}
+	// 	await this.projectRelationRepository.delete({ projectId: project.id, userId });
+	// }
 
-	async changeUserRoleInProject(projectId: string, userId: string, role: ProjectRole) {
+	// async changeUserRoleInProject(projectId: string, userId: string, role: ProjectRole, tenantId?: string) {
+	// 	if (role === 'project:personalOwner') {
+	// 		throw new ForbiddenError('Personal owner cannot be added to a team project.');
+	// 	}
+
+	// 	const project = await this.getTeamProjectWithRelations(projectId);
+	// 	ProjectNotFoundError.isDefinedAndNotNull(project, projectId);
+
+	// 	const projectUserExists = project.projectRelations.some((r) => r.userId === userId);
+	// 	if (!projectUserExists) {
+	// 		throw new ProjectNotFoundError(projectId);
+	// 	}
+
+	// 	await this.projectRelationRepository.update({ projectId, userId }, { role });
+	// }
+	async changeUserRoleInProject(
+		projectId: string,
+		userId: string,
+		role: ProjectRole,
+		tenantId?: string,
+	) {
 		if (role === 'project:personalOwner') {
 			throw new ForbiddenError('Personal owner cannot be added to a team project.');
 		}
@@ -368,12 +410,33 @@ export class ProjectService {
 		const project = await this.getTeamProjectWithRelations(projectId);
 		ProjectNotFoundError.isDefinedAndNotNull(project, projectId);
 
+		// ✅ tenant check
+		if (tenantId && project.tenantId !== tenantId) {
+			throw new ForbiddenError('Project does not belong to this tenant');
+		}
+
 		const projectUserExists = project.projectRelations.some((r) => r.userId === userId);
 		if (!projectUserExists) {
 			throw new ProjectNotFoundError(projectId);
 		}
 
 		await this.projectRelationRepository.update({ projectId, userId }, { role });
+	}
+
+	async deleteUserFromProject(projectId: string, userId: string, tenantId?: string) {
+		const project = await this.getTeamProjectWithRelations(projectId);
+
+		// ✅ tenant check
+		if (tenantId && project.tenantId !== tenantId) {
+			throw new ForbiddenError('Project does not belong to this tenant');
+		}
+
+		// Prevent project owner from being removed
+		if (this.isUserProjectOwner(project, userId)) {
+			throw new ForbiddenError('Project owner cannot be removed from the project');
+		}
+
+		await this.projectRelationRepository.delete({ projectId: project.id, userId });
 	}
 
 	async clearCredentialCanUseExternalSecretsCache(projectId: string) {

@@ -4,6 +4,8 @@ import { Project } from './project';
 import { TagEntity } from './tag-entity';
 import { Variables } from './variables';
 import { CredentialsEntity } from './credentials-entity';
+// import { SourceControlPreferencesEntity } from './source-control-preferences';
+import { EventDestinations } from './event-destinations';
 
 @Entity()
 export class Tenant {
@@ -51,4 +53,15 @@ export class Tenant {
 		(credential) => credential.tenant,
 	)
 	credentials: CredentialsEntity[];
+	// @OneToMany(
+	// 	() => SourceControlPreferencesEntity,
+	// 	(sourceControlPreferences) => sourceControlPreferences.tenant,
+	// )
+	// sourceControlPreferences: SourceControlPreferencesEntity[];
+
+	@OneToMany(
+		() => EventDestinations,
+		(dest) => dest.tenant,
+	)
+	eventDestinations: EventDestinations[];
 }

@@ -52,9 +52,14 @@ export = {
 		async (req: GetAll, res: Response) => {
 			const { offset = 0, limit = 100 } = req.query;
 
+			const tenantId = req.user.tenantId;
+
 			const [variables, count] = await Container.get(VariablesRepository).findAndCount({
 				skip: offset,
 				take: limit,
+				where: {
+					tenantId, // 👈 filter by tenant
+				},
 			});
 
 			return res.json({

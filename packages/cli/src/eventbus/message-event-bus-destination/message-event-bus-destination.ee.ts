@@ -34,7 +34,7 @@ export abstract class MessageEventBusDestination implements MessageEventBusDesti
 	credentials: INodeCredentials = {};
 
 	anonymizeAuditMessages: boolean;
-
+	tenantId?: string;
 	constructor(eventBusInstance: MessageEventBus, options: MessageEventBusDestinationOptions) {
 		// @TODO: Use DI
 		this.logger = Container.get(Logger);
@@ -49,6 +49,7 @@ export abstract class MessageEventBusDestination implements MessageEventBusDesti
 		this.anonymizeAuditMessages = options.anonymizeAuditMessages ?? false;
 		if (options.credentials) this.credentials = options.credentials;
 		this.logger.debug(`${this.__type}(${this.id}) event destination constructed`);
+		this.tenantId = options.tenantId; // 👈 assign tenantId
 	}
 
 	startListening() {
@@ -98,6 +99,7 @@ export abstract class MessageEventBusDestination implements MessageEventBusDesti
 		const data = {
 			id: this.getId(),
 			destination: this.serialize(),
+			tenantId: this.tenantId, // 🔥 pass tenantId here
 		};
 		const dbResult = await Container.get(EventDestinationsRepository).upsert(data, {
 			skipUpdateIfNoValuesChanged: true,
@@ -123,6 +125,7 @@ export abstract class MessageEventBusDestination implements MessageEventBusDesti
 			enabled: this.enabled,
 			subscribedEvents: this.subscribedEvents,
 			anonymizeAuditMessages: this.anonymizeAuditMessages,
+			tenantId: this.tenantId, // 👈 Add this
 		};
 	}
 

@@ -41,6 +41,7 @@ import { EventMessageWorkflow } from '../event-message-classes/event-message-wor
 import { messageEventBusDestinationFromDb } from '../message-event-bus-destination/message-event-bus-destination-from-db';
 import type { MessageEventBusDestination } from '../message-event-bus-destination/message-event-bus-destination.ee';
 import { MessageEventBusLogWriter } from '../message-event-bus-writer/message-event-bus-log-writer';
+import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 
 export type EventMessageReturnMode = 'sent' | 'unsent' | 'all' | 'unfinished';
 
@@ -220,39 +221,82 @@ export class MessageEventBus extends EventEmitter {
 		this.isInitialized = true;
 	}
 
-	async addDestination(destination: MessageEventBusDestination, notifyWorkers: boolean = true) {
-		await this.removeDestination(destination.getId(), false);
+	async addDestination(
+		destination: MessageEventBusDestination,
+		notifyWorkers: boolean = true,
+	): Promise<MessageEventBusDestination> {
+		// Ensure tenantId is present
+		if (!destination.tenantId) {
+			throw new BadRequestError('Tenant ID is required to add destination');
+		}
+
+		// Remove any existing destination for this tenant with the same ID
+		await this.removeDestination(destination.getId(), false, destination.tenantId);
+
+		// Register destination in memory
 		this.destinations[destination.getId()] = destination;
 		this.destinations[destination.getId()].startListening();
+
+		// Notify workers if required
 		if (notifyWorkers) {
 			void this.publisher.publishCommand({ command: 'restart-event-bus' });
 		}
+
 		return destination;
 	}
 
-	async findDestination(id?: string): Promise<MessageEventBusDestinationOptions[]> {
-		let result: MessageEventBusDestinationOptions[];
+	async findDestination(
+		id?: string,
+		tenantId?: string,
+	): Promise<MessageEventBusDestinationOptions[]> {
+		let result: MessageEventBusDestinationOptions[] = [];
+
 		if (id && Object.keys(this.destinations).includes(id)) {
-			result = [this.destinations[id].serialize()];
+			const destination = this.destinations[id].serialize();
+
+			// tenant check
+			if (!tenantId || destination.tenantId === tenantId) {
+				result = [destination];
+			} else {
+				// trying to access other tenant's destination
+				return [];
+			}
 		} else {
-			result = Object.keys(this.destinations).map((e) => this.destinations[e].serialize());
+			result = Object.values(this.destinations)
+				.filter((dest) => !tenantId || dest.tenantId === tenantId) // ✅ correct filter
+				.map((dest) => dest.serialize());
 		}
+
 		return result.sort((a, b) => (a.__type ?? '').localeCompare(b.__type ?? ''));
 	}
 
-	async removeDestination(id: string, notifyWorkers: boolean = true) {
+	async removeDestination(id: string, notifyWorkers: boolean = true, tenantId?: string) {
+		// Tenant validation first
+		if (tenantId) {
+			const record = await this.eventDestinationsRepository.findOne({
+				where: { id, tenantId },
+			});
+			if (!record) {
+				// 🚫 destination doesn't belong to this tenant, do nothing
+				return;
+			}
+		}
+
+		// Existing functionality
 		if (Object.keys(this.destinations).includes(id)) {
 			await this.destinations[id].close();
 			delete this.destinations[id];
 		}
+
 		if (notifyWorkers) {
 			void this.publisher.publishCommand({ command: 'restart-event-bus' });
 		}
 	}
 
-	async deleteDestination(id: string): Promise<DeleteResult | undefined> {
+	async deleteDestination(id: string, tenantId?: string): Promise<DeleteResult | undefined> {
 		return await this.eventDestinationsRepository.delete({
 			id,
+			tenantId, // 👈 ensures tenant isolation
 		});
 	}
 
@@ -300,11 +344,11 @@ export class MessageEventBus extends EventEmitter {
 		}
 	}
 
-	async testDestination(destinationId: string): Promise<boolean> {
+	async testDestination(destinationId: string, tenantId?: string): Promise<boolean> {
 		const msg = new EventMessageGeneric({
 			eventName: eventMessageGenericDestinationTestEvent,
 		});
-		const destination = await this.findDestination(destinationId);
+		const destination = await this.findDestination(destinationId, tenantId);
 		if (destination.length > 0) {
 			const sendResult = await this.destinations[destinationId].receiveFromEventBus({
 				msg,

@@ -47,7 +47,7 @@ export type MaskLevels = {
 export type ScopeOptions = { mode: 'oneOf' | 'allOf' };
 
 export type RoleNamespace = z.infer<typeof roleNamespaceSchema>;
-export type GlobalRole = z.infer<typeof globalRoleSchema>;
+export type GlobalRole = z.infer<typeof globalRoleSchema> | z.infer<typeof tenantRoleSchema>;
 export type AssignableGlobalRole = z.infer<typeof assignableGlobalRoleSchema>;
 export type CredentialSharingRole = z.infer<typeof credentialSharingRoleSchema>;
 export type WorkflowSharingRole = z.infer<typeof workflowSharingRoleSchema>;

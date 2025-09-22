@@ -13,13 +13,17 @@ import {
 	validCursor,
 } from '../../shared/middlewares/global.middleware';
 import { encodeNextCursor } from '../../shared/services/pagination.service';
+import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 
 export = {
 	createTag: [
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'tag:create' }),
 		async (req: TagRequest.Create, res: express.Response): Promise<express.Response> => {
 			const { name } = req.body;
-			const tenantId = req.user?.tenantId ?? '';
+			const tenantId = req.user?.tenantId;
+			if (!tenantId) {
+				throw new BadRequestError('Tenant ID missing for user');
+			}
 
 			const newTag = Container.get(TagService).toEntity({ name: name.trim(), tenantId });
 
@@ -36,7 +40,10 @@ export = {
 		async (req: TagRequest.Update, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
 			const { name } = req.body;
-			const tenantId = req.user?.tenantId ?? '';
+			const tenantId = req.user?.tenantId;
+			if (!tenantId) {
+				throw new BadRequestError('Tenant ID missing for user');
+			}
 
 			try {
 				await Container.get(TagService).getById(id, tenantId);
@@ -58,7 +65,10 @@ export = {
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'tag:delete' }),
 		async (req: TagRequest.Delete, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
-			const tenantId = req.user?.tenantId ?? '';
+			const tenantId = req.user?.tenantId;
+			if (!tenantId) {
+				throw new BadRequestError('Tenant ID missing for user');
+			}
 
 			let tag;
 			try {
@@ -76,10 +86,13 @@ export = {
 		validCursor,
 		async (req: TagRequest.GetAll, res: express.Response): Promise<express.Response> => {
 			const { offset = 0, limit = 100 } = req.query;
-			const tenantId = req.user?.tenantId ?? '';
+			const tenantId = req.user?.tenantId;
+			if (!tenantId) {
+				throw new BadRequestError('Tenant ID missing for user');
+			}
 
 			const [tags, count] = await Container.get(TagRepository).findAndCount({
-				where: { tenant: { id: tenantId } },
+				where: { tenantId },
 				skip: offset,
 				take: limit,
 			});
@@ -98,7 +111,10 @@ export = {
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'tag:read' }),
 		async (req: TagRequest.Get, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
-			const tenantId = req.user?.tenantId ?? '';
+			const tenantId = req.user?.tenantId;
+			if (!tenantId) {
+				throw new BadRequestError('Tenant ID missing for user');
+			}
 
 			try {
 				const tag = await Container.get(TagService).getById(id, tenantId);

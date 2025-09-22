@@ -16,7 +16,7 @@ export class TagService {
 		private tagRepository: TagRepository,
 	) {}
 
-	toEntity(attrs: { name: string; id?: string; tenantId?: string }) {
+	toEntity(attrs: { name: string; id?: string; tenantId: string }) {
 		attrs.name = attrs.name.trim();
 
 		// Ensure tenantId is always set when creating
@@ -43,7 +43,7 @@ export class TagService {
 		// Tenant scoped delete
 		const deleteResult = this.tagRepository.delete({
 			id,
-			tenant: { id: tenantId } as any,
+			tenantId,
 		});
 
 		await this.externalHooks.run('tag.afterDelete', [id]);
@@ -80,7 +80,7 @@ export class TagService {
 		return await this.tagRepository.findOneOrFail({
 			where: {
 				id,
-				tenant: { id: tenantId },
+				tenantId, // tenant id filter
 			},
 		});
 	}

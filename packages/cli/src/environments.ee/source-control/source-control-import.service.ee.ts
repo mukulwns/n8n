@@ -845,12 +845,24 @@ export class SourceControlImportService {
 				overriddenKeys.splice(overriddenKeys.indexOf(variable.key), 1);
 			}
 			try {
-				await this.variablesRepository.upsert({ ...variable }, ['id']);
+				await this.variablesRepository.upsert(
+					{
+						key: variable.key,
+						value: variable.value,
+					},
+					['id'],
+				);
 			} catch (errorUpsert) {
 				if (isUniqueConstraintError(errorUpsert as Error)) {
 					this.logger.debug(`Variable ${variable.key} already exists, updating instead`);
 					try {
-						await this.variablesRepository.update({ key: variable.key }, { ...variable });
+						await this.variablesRepository.update(
+							{ key: variable.key },
+							{
+								key: variable.key,
+								value: variable.value,
+							},
+						);
 					} catch (errorUpdate) {
 						this.logger.debug(`Failed to update variable ${variable.key}, skipping`);
 						this.logger.debug((errorUpdate as Error).message);

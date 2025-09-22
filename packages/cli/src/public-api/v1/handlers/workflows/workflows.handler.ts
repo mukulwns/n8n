@@ -111,7 +111,6 @@ export = {
 		async (req: WorkflowRequest.Get, res: express.Response): Promise<express.Response> => {
 			const { id } = req.params;
 			const { excludePinnedData = false } = req.query;
-
 			const workflow = await Container.get(WorkflowFinderService).findWorkflowForUser(
 				id,
 				req.user,
@@ -152,7 +151,7 @@ export = {
 				projectId,
 			} = req.query;
 
-			const where: FindOptionsWhere<WorkflowEntity> = {
+			let where: FindOptionsWhere<WorkflowEntity> = {
 				...(active !== undefined && { active }),
 				...(name !== undefined && { name: Like('%' + name.trim() + '%') }),
 			};
@@ -229,6 +228,18 @@ export = {
 
 			if (!excludePinnedData) {
 				selectFields.push('pinData');
+			}
+
+			// tenant id filter while fetching the workflows
+			if (req.user?.tenantId) {
+				where = {
+					...where,
+					shared: {
+						project: {
+							tenantId: req.user.tenantId,
+						},
+					},
+				};
 			}
 
 			const [workflows, count] = await Container.get(WorkflowRepository).findAndCount({

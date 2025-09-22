@@ -56,7 +56,7 @@ export class VariablesService {
 			}
 		}
 		await this.variablesRepository.delete(id);
-		await this.updateCache();
+		// await this.updateCache(); removed the logic to fetch it from cache
 	}
 
 	async updateCache(): Promise<void> {
@@ -115,7 +115,10 @@ export class VariablesService {
 			}
 		}
 
-		await this.variablesRepository.update(id, variable);
+		await this.variablesRepository.update(id, {
+			key: variable.key,
+			value: variable.value,
+		});
 		await this.updateCache();
 		return (await this.getCached(id))!;
 	}

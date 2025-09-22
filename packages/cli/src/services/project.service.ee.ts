@@ -431,6 +431,7 @@ export class ProjectService {
 		const em = entityManager ?? this.projectRepository.manager;
 		let where: FindOptionsWhere<Project> = {
 			id: projectId,
+			...(user?.tenantId ? { tenantId: user.tenantId } : {}),
 		};
 
 		if (!hasGlobalScope(user, scopes, { mode: 'allOf' })) {

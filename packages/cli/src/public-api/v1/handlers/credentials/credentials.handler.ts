@@ -32,13 +32,21 @@ export = {
 			res: express.Response,
 		): Promise<express.Response<Partial<CredentialsEntity>>> => {
 			try {
-				const newCredential = await createCredential(req.body);
+				const newCredential = await createCredential({
+					...req.body,
+					tenantId: req.user?.tenantId || '', // ✅ tenantId from user
+				});
 
 				const encryptedData = await encryptCredential(newCredential);
 
 				Object.assign(newCredential, encryptedData);
 
-				const savedCredential = await saveCredential(newCredential, req.user, encryptedData);
+				const savedCredential = await saveCredential(
+					newCredential,
+					req.user,
+					encryptedData,
+					req.user?.tenantId || '', // ✅ tenantId pass to saveCredential
+				);
 
 				return res.json(sanitizeCredentials(savedCredential));
 			} catch ({ message, httpStatusCode }) {
@@ -57,6 +65,7 @@ export = {
 				req.user,
 				req.params.id,
 				body.destinationProjectId,
+				req.user.tenantId || '',
 			);
 
 			res.status(204).send();
@@ -73,6 +82,7 @@ export = {
 			let credential: CredentialsEntity | undefined;
 
 			if (!['global:owner', 'global:admin'].includes(req.user.role)) {
+				// 🔹 fetch only credentials belonging to same tenant
 				const shared = await getSharedCredentials(req.user.id, credentialId);
 
 				if (shared?.role === 'credential:owner') {
@@ -80,6 +90,11 @@ export = {
 				}
 			} else {
 				credential = (await getCredentials(credentialId)) as CredentialsEntity;
+
+				// 🔹 ensure tenant match
+				if (credential && credential.tenantId !== req.user?.tenantId) {
+					credential = undefined;
+				}
 			}
 
 			if (!credential) {

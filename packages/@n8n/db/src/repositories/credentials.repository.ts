@@ -12,10 +12,13 @@ export class CredentialsRepository extends Repository<CredentialsEntity> {
 		super(CredentialsEntity, dataSource.manager);
 	}
 
-	async findStartingWith(credentialName: string) {
+	async findStartingWith(name: string, tenantId?: string) {
 		return await this.find({
 			select: ['name'],
-			where: { name: Like(`${credentialName}%`) },
+			where: {
+				...(tenantId ? { tenantId } : {}), // filter only inside tenant
+				name: Like(`${name}%`),
+			},
 		});
 	}
 

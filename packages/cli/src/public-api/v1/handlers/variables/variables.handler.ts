@@ -57,10 +57,15 @@ export = {
 				throw new BadRequestError('Tenant ID missing for user');
 			}
 
+			const tenantId = req.user.tenantId;
+
 			const [variables, count] = await Container.get(VariablesRepository).findAndCount({
 				where: { tenantId }, // tenent id filter
 				skip: offset,
 				take: limit,
+				where: {
+					tenantId, // 👈 filter by tenant
+				},
 			});
 
 			return res.json({

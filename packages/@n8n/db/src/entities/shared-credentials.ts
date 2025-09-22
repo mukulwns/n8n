@@ -10,13 +10,19 @@ export class SharedCredentials extends WithTimestamps {
 	@Column({ type: 'varchar' })
 	role: CredentialSharingRole;
 
-	@ManyToOne('CredentialsEntity', 'shared')
+	@ManyToOne(
+		() => CredentialsEntity,
+		(credentials) => credentials.shared,
+	)
 	credentials: CredentialsEntity;
 
 	@PrimaryColumn()
 	credentialsId: string;
 
-	@ManyToOne('Project', 'sharedCredentials')
+	@ManyToOne(
+		() => Project,
+		(project) => project.sharedCredentials,
+	)
 	project: Project;
 
 	@PrimaryColumn()

@@ -39,7 +39,11 @@ export = {
 				req.tenantId = tenantId;
 			}
 
-			const project = await Container.get(ProjectController).createProject(req, res, payload.data);
+			const project = await Container.get(ProjectController).createProject(
+				{ ...req, body: { ...payload.data, tenantId: req.user.tenantId } },
+				res,
+				payload.data,
+			);
 
 			return res.status(201).json(project);
 		},
@@ -118,10 +122,38 @@ export = {
 			});
 		},
 	],
+	// addUsersToProject: [
+	// 	isLicensed('feat:projectRole:admin'),
+	// 	apiKeyHasScopeWithGlobalScopeFallback({ scope: 'project:update' }),
+	// 	async (req: AuthenticatedRequest<{ projectId: string }>, res: Response) => {
+	// 		const payload = AddUsersToProjectDto.safeParse(req.body);
+	// 		if (payload.error) {
+	// 			return res.status(400).json(payload.error.errors[0]);
+	// 		}
+
+	// 		try {
+	// 			await Container.get(ProjectService).addUsersToProject(
+	// 				req.params.projectId,
+	// 				payload.data.relations,
+	// 			);
+	// 		} catch (error) {
+	// 			if (error instanceof ResponseError) {
+	// 				return res.status(error.httpStatusCode).send({ message: error.message });
+	// 			}
+	// 			throw error;
+	// 		}
+
+	// 		return res.status(201).send();
+	// 	},
+	// ],
 	addUsersToProject: [
 		isLicensed('feat:projectRole:admin'),
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'project:update' }),
 		async (req: AuthenticatedRequest<{ projectId: string }>, res: Response) => {
+			if (!req.tenantId) {
+				return res.status(400).json({ message: 'Tenant ID missing in request' });
+			}
+
 			const payload = AddUsersToProjectDto.safeParse(req.body);
 			if (payload.error) {
 				return res.status(400).json(payload.error.errors[0]);
@@ -144,10 +176,37 @@ export = {
 			return res.status(201).send();
 		},
 	],
+	// changeUserRoleInProject: [
+	// 	isLicensed('feat:projectRole:admin'),
+	// 	apiKeyHasScopeWithGlobalScopeFallback({ scope: 'project:update' }),
+	// 	async (req: AuthenticatedRequest<{ projectId: string; userId: string }>, res: Response) => {
+	// 		const payload = ChangeUserRoleInProject.safeParse(req.body);
+	// 		if (payload.error) {
+	// 			return res.status(400).json(payload.error.errors[0]);
+	// 		}
+
+	// 		const { projectId, userId } = req.params;
+	// 		const { role } = payload.data;
+	// 		try {
+	// 			await Container.get(ProjectService).changeUserRoleInProject(projectId, userId, role);
+	// 		} catch (error) {
+	// 			if (error instanceof ResponseError) {
+	// 				return res.status(error.httpStatusCode).send({ message: error.message });
+	// 			}
+	// 			throw error;
+	// 		}
+
+	// 		return res.status(204).send();
+	// 	},
+	// ],
 	changeUserRoleInProject: [
 		isLicensed('feat:projectRole:admin'),
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'project:update' }),
 		async (req: AuthenticatedRequest<{ projectId: string; userId: string }>, res: Response) => {
+			if (!req.tenantId) {
+				return res.status(400).json({ message: 'Tenant ID missing in request' });
+			}
+
 			const payload = ChangeUserRoleInProject.safeParse(req.body);
 			if (payload.error) {
 				return res.status(400).json(payload.error.errors[0]);
@@ -176,13 +235,37 @@ export = {
 			return res.status(204).send();
 		},
 	],
+	// deleteUserFromProject: [
+	// 	isLicensed('feat:projectRole:admin'),
+	// 	apiKeyHasScopeWithGlobalScopeFallback({ scope: 'project:update' }),
+	// 	async (req: AuthenticatedRequest<{ projectId: string; userId: string }>, res: Response) => {
+	// 		const { projectId, userId } = req.params;
+	// 		try {
+	// 			await Container.get(ProjectService).deleteUserFromProject(projectId, userId);
+	// 		} catch (error) {
+	// 			if (error instanceof ResponseError) {
+	// 				return res.status(error.httpStatusCode).send({ message: error.message });
+	// 			}
+	// 			throw error;
+	// 		}
+	// 		return res.status(204).send();
+	// 	},
+	// ],
 	deleteUserFromProject: [
 		isLicensed('feat:projectRole:admin'),
 		apiKeyHasScopeWithGlobalScopeFallback({ scope: 'project:update' }),
 		async (req: AuthenticatedRequest<{ projectId: string; userId: string }>, res: Response) => {
+			if (!req.tenantId) {
+				return res.status(400).json({ message: 'Tenant ID missing in request' });
+			}
+
 			const { projectId, userId } = req.params;
 			try {
-				await Container.get(ProjectService).deleteUserFromProject(projectId, userId);
+				await Container.get(ProjectService).deleteUserFromProject(
+					projectId,
+					userId,
+					req.tenantId, // 👈 tenant check
+				);
 			} catch (error) {
 				if (error instanceof ResponseError) {
 					return res.status(error.httpStatusCode).send({ message: error.message });

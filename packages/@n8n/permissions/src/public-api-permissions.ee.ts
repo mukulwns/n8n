@@ -69,6 +69,9 @@ const MAP_ROLE_SCOPES: Record<GlobalRole, ApiKeyScope[]> = {
 	'global:owner': OWNER_API_KEY_SCOPES,
 	'global:admin': ADMIN_API_KEY_SCOPES,
 	'global:member': MEMBER_API_KEY_SCOPES,
+	'tenant:owner': OWNER_API_KEY_SCOPES,
+	'tenant:admin': ADMIN_API_KEY_SCOPES,
+	'tenant:member': MEMBER_API_KEY_SCOPES,
 };
 
 export const getApiKeyScopesForRole = (role: GlobalRole) => {

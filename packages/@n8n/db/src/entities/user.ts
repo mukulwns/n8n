@@ -109,12 +109,16 @@ export class User extends WithTimestamps implements IUser, AuthPrincipal {
 
 	@Column({ type: 'date', nullable: true })
 	lastActiveAt?: Date | null;
-	@ManyToOne(() => Tenant, (tenant) => tenant.users, { nullable: true, onDelete: 'SET NULL' })
+	@ManyToOne(
+		() => Tenant,
+		(tenant) => tenant.users,
+		{ nullable: false, onDelete: 'CASCADE' },
+	)
 	@JoinColumn({ name: 'tenantId' })
-	tenant?: Tenant;
+	tenant: Tenant;
 
-	@Column({ type: 'uuid', nullable: true })
-	tenantId?: string | null;
+	@Column({ type: 'uuid' })
+	tenantId: string;
 
 	/**
 	 * Whether the user is pending setup completion.

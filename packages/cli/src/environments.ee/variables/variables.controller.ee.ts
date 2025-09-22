@@ -54,9 +54,11 @@ export class VariablesController {
 	@GlobalScope('variable:read')
 	async getVariable(req: VariablesRequest.Get) {
 		const id = req.params.id;
+		const tenantId = req.user?.tenantId;
+
 		const variable = await this.variablesService.getCached(id);
-		if (variable === null) {
-			throw new NotFoundError(`Variable with id ${req.params.id} not found`);
+		if (variable === null || variable.tenantId !== tenantId) {
+			throw new NotFoundError(`Variable with id ${id} not found`);
 		}
 		return variable;
 	}
@@ -67,10 +69,13 @@ export class VariablesController {
 	async updateVariable(req: VariablesRequest.Update) {
 		const id = req.params.id;
 		const variable = req.body;
-		delete variable.id;
 		const tenantId = req.user?.tenantId;
-		if (!tenantId) {
-			throw new BadRequestError('Tenant ID missing for user');
+
+		delete variable.id;
+		const existing = await this.variablesService.getCached(id);
+
+		if (!existing || existing.tenantId !== tenantId) {
+			throw new NotFoundError(`Variable with id ${id} not found`);
 		}
 		try {
 			return await this.variablesService.update(id, variable, tenantId);
@@ -87,12 +92,14 @@ export class VariablesController {
 	@Delete('/:id')
 	@GlobalScope('variable:delete')
 	async deleteVariable(req: VariablesRequest.Delete) {
-		const id = req.params.id;
 		const tenantId = req.user?.tenantId;
-		if (!tenantId) {
-			throw new BadRequestError('Tenant ID missing for user');
+		const id = req.params.id;
+		const existing = await this.variablesService.getCached(id);
+
+		if (!existing || existing.tenantId !== tenantId) {
+			throw new NotFoundError(`Variable with id ${id} not found`);
 		}
-		await this.variablesService.delete(id, tenantId);
+		await this.variablesService.delete(id);
 
 		return true;
 	}

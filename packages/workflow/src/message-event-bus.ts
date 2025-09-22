@@ -63,6 +63,7 @@ export interface MessageEventBusDestinationOptions {
 	subscribedEvents?: string[];
 	credentials?: INodeCredentials;
 	anonymizeAuditMessages?: boolean;
+	tenantId?: string;
 }
 
 export interface MessageEventBusDestinationWebhookParameterItem {

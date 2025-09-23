@@ -553,6 +553,6 @@ export class ProjectService {
 	}
 
 	async getProjectCounts(tenantId: string): Promise<Record<ProjectType, number>> {
-		return await this.projectRepository.getProjectCounts();
+		return await this.projectRepository.getProjectCounts(tenantId);
 	}
 }

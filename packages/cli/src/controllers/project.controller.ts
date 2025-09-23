@@ -303,23 +303,23 @@ export class ProjectController {
 
 	@Get('/')
 	async getAllProjects(req: AuthenticatedRequest): Promise<Project[]> {
-		if (!req.tenantId) {
+		if (!req.user?.tenantId) {
 			this.logger.debug('Tenant ID missing in request');
 			throw new BadRequestError('Tenant ID missing in JWT');
 		}
-		const projects = await this.projectsService.getAccessibleProjects(req.user, req.tenantId);
+		const projects = await this.projectsService.getAccessibleProjects(req.user, req.user?.tenantId);
 		this.logger.debug('Retrieved projects', { count: projects.length, tenantId: req.tenantId });
 		return projects;
 	}
 
 	@Get('/count')
 	async getProjectCounts(req: AuthenticatedRequest) {
-		if (!req.tenantId) {
+		if (!req.user?.tenantId) {
 			this.logger.debug('Tenant ID missing in request');
 			throw new BadRequestError('Tenant ID missing in JWT');
 		}
-		const counts = await this.projectsService.getProjectCounts(req.tenantId);
-		this.logger.debug('Retrieved project counts', { counts, tenantId: req.tenantId });
+		const counts = await this.projectsService.getProjectCounts(req.user.tenantId);
+		this.logger.debug('Retrieved project counts', { counts, tenantId: req.user.tenantId });
 		return counts;
 	}
 

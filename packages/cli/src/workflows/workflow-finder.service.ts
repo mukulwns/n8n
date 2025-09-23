@@ -25,6 +25,7 @@ export class WorkflowFinderService {
 		} = {},
 	) {
 		let where: FindOptionsWhere<SharedWorkflow> = {};
+		const tenantId = user.tenantId;
 
 		if (!hasGlobalScope(user, scopes, { mode: 'allOf' })) {
 			const projectRoles = rolesWithScope('project', scopes);
@@ -36,6 +37,18 @@ export class WorkflowFinderService {
 					projectRelations: {
 						role: In(projectRoles),
 						userId: user.id,
+					},
+				},
+			};
+		}
+		if (tenantId) {
+			where = {
+				...where,
+				workflow: {
+					shared: {
+						project: {
+							tenantId,
+						},
 					},
 				},
 			};
@@ -89,6 +102,20 @@ export class WorkflowFinderService {
 					projectRelations: {
 						role: In(projectRoles),
 						userId: user.id,
+					},
+				},
+			};
+		}
+
+		// tenant id filter to fetch workflows
+		if (user.tenantId) {
+			where = {
+				...where,
+				workflow: {
+					shared: {
+						project: {
+							...(user.tenantId ? { tenantId: user.tenantId } : {}),
+						},
 					},
 				},
 			};

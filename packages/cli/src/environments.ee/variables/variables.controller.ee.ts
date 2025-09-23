@@ -78,7 +78,7 @@ export class VariablesController {
 			throw new NotFoundError(`Variable with id ${id} not found`);
 		}
 		try {
-			return await this.variablesService.update(id, variable);
+			return await this.variablesService.update(id, variable, tenantId);
 		} catch (error) {
 			if (error instanceof VariableCountLimitReachedError) {
 				throw new BadRequestError(error.message);

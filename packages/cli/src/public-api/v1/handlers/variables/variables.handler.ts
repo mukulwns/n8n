@@ -12,6 +12,7 @@ import {
 	validCursor,
 } from '../../shared/middlewares/global.middleware';
 import { encodeNextCursor } from '../../shared/services/pagination.service';
+import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 
 type Create = VariablesRequest.Create;
 type Delete = VariablesRequest.Delete;
@@ -51,15 +52,15 @@ export = {
 		validCursor,
 		async (req: GetAll, res: Response) => {
 			const { offset = 0, limit = 100 } = req.query;
-
-			const tenantId = req.user.tenantId;
+			const tenantId = req.user?.tenantId;
+			if (!tenantId) {
+				throw new BadRequestError('Tenant ID missing for user');
+			}
 
 			const [variables, count] = await Container.get(VariablesRepository).findAndCount({
+				where: { tenantId }, // tenent id filter
 				skip: offset,
 				take: limit,
-				where: {
-					tenantId, // 👈 filter by tenant
-				},
 			});
 
 			return res.json({

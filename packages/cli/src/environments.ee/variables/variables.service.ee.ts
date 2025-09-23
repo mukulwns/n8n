@@ -7,7 +7,7 @@ import { VariableValidationError } from '@/errors/variable-validation.error';
 import { EventService } from '@/events/event.service';
 import { License } from '@/license';
 import { CacheService } from '@/services/cache/cache.service';
-import { DeepPartial } from '@n8n/typeorm';
+import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 
 @Service()
 export class VariablesService {
@@ -45,9 +45,18 @@ export class VariablesService {
 		return this.variablesRepository.create(foundVariable as Partial<Variables>);
 	}
 
-	async delete(id: string): Promise<void> {
+	async delete(id: string, tenantId?: string): Promise<void> {
+		// first check if variable with tenent Id is present in the db or not
+		if (tenantId) {
+			const recordExist = await this.variablesRepository.findOne({
+				where: { id, tenantId },
+			});
+			if (!recordExist) {
+				throw new BadRequestError(`Variable with id ${id} not found.`);
+			}
+		}
 		await this.variablesRepository.delete(id);
-		await this.updateCache();
+		// await this.updateCache(); removed the logic to fetch it from cache
 	}
 
 	async updateCache(): Promise<void> {
@@ -94,28 +103,22 @@ export class VariablesService {
 		return saveResult;
 	}
 
-	// async update(id: string, variable: Omit<Variables, 'id'>): Promise<Variables> {
-	// 	this.validateVariable(variable);
-	// 	await this.variablesRepository.update(id, variable);
-	// 	await this.updateCache();
-	// 	return (await this.getCached(id))!;
-	// }
-
-	async update(id: string, variable: Omit<Variables, 'id'>): Promise<Variables> {
+	async update(id: string, variable: Omit<Variables, 'id'>, tenantId?: string): Promise<Variables> {
 		this.validateVariable(variable);
+		// first check if variable with tenent Id is present in the db or not
+		if (tenantId) {
+			const recordExist = await this.variablesRepository.findOne({
+				where: { id, tenantId },
+			});
+			if (!recordExist) {
+				throw new BadRequestError(`Variable with id ${id} not found.`);
+			}
+		}
 
-		// Use DeepPartial here
-		const variableData: DeepPartial<Variables> = {
-			...variable,
-			tenant: variable.tenant
-				? {
-						...variable.tenant,
-						users: variable.tenant.users?.map((u) => ({ id: u.id })) as DeepPartial<User>[], // Correct type for users
-					}
-				: undefined,
-		};
-
-		await this.variablesRepository.update(id, variableData);
+		await this.variablesRepository.update(id, {
+			key: variable.key,
+			value: variable.value,
+		});
 		await this.updateCache();
 		return (await this.getCached(id))!;
 	}

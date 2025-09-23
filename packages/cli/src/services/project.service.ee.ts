@@ -344,9 +344,13 @@ export class ProjectService {
 		);
 	}
 
-	private async getTeamProjectWithRelations(projectId: string) {
+	private async getTeamProjectWithRelations(projectId: string, tenantId?: string) {
 		const project = await this.projectRepository.findOne({
-			where: { id: projectId, type: 'team' },
+			where: {
+				id: projectId,
+				type: 'team',
+				...(tenantId ? { tenantId } : {}), // tenent id filter
+			},
 			relations: { projectRelations: true },
 		});
 		ProjectNotFoundError.isDefinedAndNotNull(project, projectId);
@@ -407,7 +411,7 @@ export class ProjectService {
 			throw new ForbiddenError('Personal owner cannot be added to a team project.');
 		}
 
-		const project = await this.getTeamProjectWithRelations(projectId);
+		const project = await this.getTeamProjectWithRelations(projectId, tenantId);
 		ProjectNotFoundError.isDefinedAndNotNull(project, projectId);
 
 		// ✅ tenant check
@@ -485,6 +489,7 @@ export class ProjectService {
 		const em = entityManager ?? this.projectRepository.manager;
 		let where: FindOptionsWhere<Project> = {
 			id: projectId,
+			...(user?.tenantId ? { tenantId: user.tenantId } : {}),
 		};
 
 		if (!hasGlobalScope(user, scopes, { mode: 'allOf' })) {
@@ -520,9 +525,11 @@ export class ProjectService {
 	}
 
 	async getProject(projectId: string, tenantId?: string): Promise<Project> {
+		// also add tenant id check
 		return await this.projectRepository.findOneOrFail({
 			where: {
 				id: projectId,
+				tenantId,
 			},
 		});
 	}

@@ -30,8 +30,9 @@ export = {
 		async (req: UserRequest.Get, res: express.Response) => {
 			const { includeRole = false } = req.query;
 			const { id } = req.params;
+			const tenantId = req.user?.tenantId;
 
-			const user = await getUser({ withIdentifier: id, includeRole });
+			const user = await getUser({ withIdentifier: id, includeRole, tenantId });
 
 			if (!user) {
 				return res.status(404).json({
@@ -53,7 +54,7 @@ export = {
 		validCursor,
 		async (req: UserRequest.Get, res: express.Response) => {
 			const { offset = 0, limit = 100, includeRole = false, projectId } = req.query;
-
+			const tenantId = req.user?.tenantId;
 			const _in = projectId
 				? await Container.get(ProjectRelationRepository).findUserIdsByProjectId(projectId)
 				: undefined;
@@ -63,6 +64,7 @@ export = {
 				limit,
 				offset,
 				in: _in,
+				tenantId,
 			});
 
 			Container.get(EventService).emit('user-retrieved-all-users', {

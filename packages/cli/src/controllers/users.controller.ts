@@ -145,11 +145,11 @@ export class UsersController {
 	@Get('/:id/password-reset-link')
 	@GlobalScope('user:resetPassword')
 	async getUserPasswordResetLink(req: UserRequest.PasswordResetLink) {
+		const tenantId = req.user?.tenantId;
 		const user = await this.userRepository.findOneOrFail({
 			where: {
 				id: req.params.id,
-				tenantId: req.user.tenantId || `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
-				// ?? undefined
+				...(tenantId ? { tenantId } : {}), // tenant id filter
 			},
 		});
 		if (!user) {
@@ -172,11 +172,12 @@ export class UsersController {
 		@Body payload: SettingsUpdateRequestDto,
 		@Param('id') id: string,
 	) {
+		const tenantId = _req.user?.tenantId;
 		await this.userService.updateSettings(id, payload);
 
 		const user = await this.userRepository.findOneOrFail({
 			select: ['settings'],
-			where: { id },
+			where: { id, ...(tenantId ? { tenantId } : {}) }, // tenant id filter
 		});
 
 		return user.settings;
@@ -199,11 +200,11 @@ export class UsersController {
 		}
 
 		const { transferId } = req.query;
+		const tenantId = req.user?.tenantId;
 
 		const userToDelete = await this.userRepository.findOneBy({
 			id: idToDelete,
-			tenantId: req.user.tenantId || `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
-			// ?? undefined,
+			...(tenantId ? { tenantId } : {}), // tenant id filter
 		});
 
 		if (!userToDelete) {
@@ -319,11 +320,10 @@ export class UsersController {
 	) {
 		const { NO_ADMIN_ON_OWNER, NO_USER, NO_OWNER_ON_OWNER } =
 			UsersController.ERROR_MESSAGES.CHANGE_ROLE;
-
+		const tenantId = req.user?.tenantId;
 		const targetUser = await this.userRepository.findOneBy({
 			id,
-			tenantId: req.user.tenantId || `3926b251-1aac-41a5-a0bf-b25fa2ba2222`,
-			// ?? undefined
+			...(tenantId ? { tenantId } : {}), // tenant id filter
 		});
 		if (targetUser === null) {
 			throw new NotFoundError(NO_USER);

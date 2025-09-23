@@ -38,9 +38,11 @@ export class InsightsController {
 		_res: Response,
 		@Query payload: InsightsDateFilterDto = { dateRange: 'week' },
 	): Promise<InsightsSummary> {
+		const tenantId: string = _req.user?.tenantId;
 		const dateRangeAndMaxAgeInDays = this.getMaxAgeInDaysAndGranularity(payload);
 		return await this.insightsService.getInsightsSummary({
 			periodLengthInDays: dateRangeAndMaxAgeInDays.maxAgeInDays,
+			tenantId,
 		});
 	}
 

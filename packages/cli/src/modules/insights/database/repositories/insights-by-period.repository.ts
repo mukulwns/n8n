@@ -282,7 +282,8 @@ export class InsightsByPeriodRepository extends Repository<InsightsByPeriod> {
 
 	async getPreviousAndCurrentPeriodTypeAggregates({
 		periodLengthInDays,
-	}: { periodLengthInDays: number }): Promise<
+		tenantId,
+	}: { periodLengthInDays: number; tenantId: string }): Promise<
 		Array<{
 			period: 'previous' | 'current';
 			type: 0 | 1 | 2 | 3;
@@ -296,6 +297,30 @@ export class InsightsByPeriodRepository extends Repository<InsightsByPeriod> {
 				${this.getAgeLimitQuery(periodLengthInDays * 2)}  AS previous_start
 		`;
 
+		// const rawRows = await this.createQueryBuilder('insights')
+		// 	.addCommonTableExpression(cte, 'date_ranges')
+		// 	.select(
+		// 		sql`
+		// 				CASE
+		// 					WHEN insights.periodStart >= date_ranges.current_start AND insights.periodStart <= date_ranges.current_end
+		// 					THEN 'current'
+		// 					ELSE 'previous'
+		// 				END
+		// 			`,
+		// 		'period',
+		// 	)
+		// 	.addSelect('insights.type', 'type')
+		// 	.addSelect('SUM(value)', 'total_value')
+		// 	// Use a cross join with the CTE
+		// 	.innerJoin('date_ranges', 'date_ranges', '1=1')
+		// 	// Filter to only include data from the last 14 days
+		// 	.where('insights.periodStart >= date_ranges.previous_start')
+		// 	.andWhere('insights.periodStart <= date_ranges.current_end')
+		// 	// Group by both period and type
+		// 	.groupBy('period')
+		// 	.addGroupBy('insights.type')
+		// 	.getRawMany();
+
 		const rawRows = await this.createQueryBuilder('insights')
 			.addCommonTableExpression(cte, 'date_ranges')
 			.select(
@@ -308,14 +333,12 @@ export class InsightsByPeriodRepository extends Repository<InsightsByPeriod> {
 					`,
 				'period',
 			)
-			.addSelect('insights.type', 'type')
-			.addSelect('SUM(value)', 'total_value')
-			// Use a cross join with the CTE
 			.innerJoin('date_ranges', 'date_ranges', '1=1')
-			// Filter to only include data from the last 14 days
+			.innerJoin('insights_metadata', 'meta', 'meta.metaId = insights.metaId')
+			.innerJoin('project', 'p', 'p.id = meta.projectId')
 			.where('insights.periodStart >= date_ranges.previous_start')
 			.andWhere('insights.periodStart <= date_ranges.current_end')
-			// Group by both period and type
+			.andWhere('p.tenantId = :tenantId', { tenantId })
 			.groupBy('period')
 			.addGroupBy('insights.type')
 			.getRawMany();

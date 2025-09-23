@@ -62,9 +62,11 @@ export class InsightsService {
 
 	async getInsightsSummary({
 		periodLengthInDays,
-	}: { periodLengthInDays: number }): Promise<InsightsSummary> {
+		tenantId,
+	}: { periodLengthInDays: number; tenantId: string }): Promise<InsightsSummary> {
 		const rows = await this.insightsByPeriodRepository.getPreviousAndCurrentPeriodTypeAggregates({
 			periodLengthInDays,
+			tenantId,
 		});
 
 		// Initialize data structures for both periods

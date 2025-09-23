@@ -297,42 +297,21 @@ export class InsightsByPeriodRepository extends Repository<InsightsByPeriod> {
 				${this.getAgeLimitQuery(periodLengthInDays * 2)}  AS previous_start
 		`;
 
-		// const rawRows = await this.createQueryBuilder('insights')
-		// 	.addCommonTableExpression(cte, 'date_ranges')
-		// 	.select(
-		// 		sql`
-		// 				CASE
-		// 					WHEN insights.periodStart >= date_ranges.current_start AND insights.periodStart <= date_ranges.current_end
-		// 					THEN 'current'
-		// 					ELSE 'previous'
-		// 				END
-		// 			`,
-		// 		'period',
-		// 	)
-		// 	.addSelect('insights.type', 'type')
-		// 	.addSelect('SUM(value)', 'total_value')
-		// 	// Use a cross join with the CTE
-		// 	.innerJoin('date_ranges', 'date_ranges', '1=1')
-		// 	// Filter to only include data from the last 14 days
-		// 	.where('insights.periodStart >= date_ranges.previous_start')
-		// 	.andWhere('insights.periodStart <= date_ranges.current_end')
-		// 	// Group by both period and type
-		// 	.groupBy('period')
-		// 	.addGroupBy('insights.type')
-		// 	.getRawMany();
-
+		// added tenant id filter here
 		const rawRows = await this.createQueryBuilder('insights')
 			.addCommonTableExpression(cte, 'date_ranges')
 			.select(
 				sql`
-						CASE
-							WHEN insights.periodStart >= date_ranges.current_start AND insights.periodStart <= date_ranges.current_end
-							THEN 'current'
-							ELSE 'previous'
-						END
-					`,
+				CASE
+					WHEN insights.periodStart >= date_ranges.current_start AND insights.periodStart <= date_ranges.current_end
+					THEN 'current'
+					ELSE 'previous'
+				END
+				`,
 				'period',
 			)
+			.addSelect('insights.type', 'type')
+			.addSelect('COALESCE(SUM(insights.value), 0)', 'total_value')
 			.innerJoin('date_ranges', 'date_ranges', '1=1')
 			.innerJoin('insights_metadata', 'meta', 'meta.metaId = insights.metaId')
 			.innerJoin('project', 'p', 'p.id = meta.projectId')

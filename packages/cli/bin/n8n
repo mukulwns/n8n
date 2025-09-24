@@ -1,36 +1,49 @@
 #!/usr/bin/env node
 
 const path = require('path');
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const dotenv = require('dotenv');
 
-// Make sure that it also find the config folder when it
-// did get started from another folder that the root one.
+// ✅ Load .env file from the correct location only once
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// ✅ Print relevant environment variables for debugging
+console.log('Environment:', {
+	DB_TYPE: process.env.DB_TYPE,
+	DB_POSTGRESDB_DATABASE: process.env.DB_POSTGRESDB_DATABASE,
+	DB_POSTGRESDB_SSL_ENABLED: process.env.DB_POSTGRESDB_SSL_ENABLED,
+	N8N_RUNNERS_ENABLED: process.env.N8N_RUNNERS_ENABLED,
+});
+
+// ✅ Ensure the config directory is set correctly
 process.env.NODE_CONFIG_DIR = process.env.NODE_CONFIG_DIR || path.join(__dirname, 'config');
 
-// Check if version should be displayed
+// ✅ Handle version flag (`-v`, `--version`)
 const versionFlags = ['-v', '-V', '--version'];
 if (versionFlags.includes(process.argv.slice(-1)[0])) {
-	console.log(require('../package').version);
+	console.log(require('../package.json').version);
 	process.exit(0);
 }
 
+// ✅ Validate Node.js version
 const satisfies = require('semver/functions/satisfies');
 const nodeVersion = process.versions.node;
 const {
 	engines: { node: supportedNodeVersions },
 } = require('../package.json');
+
 if (!satisfies(nodeVersion, supportedNodeVersions)) {
 	console.error(`
-Your Node.js version ${nodeVersion} is currently not supported by n8n.
-Please use a Node.js version that satisfies the following version range: ${supportedNodeVersions}
+Your Node.js version ${nodeVersion} is not supported by n8n.
+Please use a version that satisfies: ${supportedNodeVersions}
 `);
 	process.exit(1);
 }
 
-// Disable nodejs custom inspection across the app
+// ✅ Disable custom inspection globally
 const { inspect } = require('util');
 inspect.defaultOptions.customInspect = false;
 
+// ✅ Enable source maps and metadata
 require('source-map-support').install();
 require('reflect-metadata');
 
@@ -48,17 +61,15 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') }
 // `GlobalConfig.database.type` to decide on column types and timestamp syntax.
 require('../dist/config');
 
+// ✅ Force IPv4 if configured
 if (process.env.NODEJS_PREFER_IPV4 === 'true') {
 	require('dns').setDefaultResultOrder('ipv4first');
 }
 
-// Node.js 20 enabled a Happy Eyeballs algorithm which enables support
-// for both IPv6 and IPv4 at the same time, favoring IPv6 when possible.
-// However there are some issues in the algorithm implementation that is causing
-// issues to our users with services like Telegram or Airtable. This restores the
-// behavior to pre v20
-// More details: https://github.com/nodejs/node/issues/48145
+// ✅ Fix for Node.js 20 “Happy Eyeballs” DNS bug
 require('net').setDefaultAutoSelectFamily?.(false);
+
+// ✅ Boot n8n
 (async () => {
 	const { Container } = await import('@n8n/di');
 	const { CommandRegistry } = await import('../dist/command-registry.js');

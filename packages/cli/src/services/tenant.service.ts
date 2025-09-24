@@ -1,6 +1,7 @@
 import { Service } from '@n8n/di';
 import { Logger } from '@n8n/backend-common';
-import { TenantRepository, Tenant } from '@n8n/db';
+import { TenantRepository, Tenant, User } from '@n8n/db';
+import { DeepPartial } from '@n8n/typeorm';
 
 @Service()
 export class TenantService {
@@ -28,15 +29,12 @@ export class TenantService {
 	async updateTenant(id: string, data: Partial<Tenant>) {
 		const updateData = {
 			...data,
-			users: data.users?.map((u) => ({ id: u.id })) as any, // ✅ fix for relation
+			users: data.users?.map((u) => ({ id: u.id })) as DeepPartial<User>[], // Use DeepPartial for users
 		};
 		await this.tenantRepository.update(id, updateData);
 		return await this.tenantRepository.findOneBy({ id });
 	}
 
-	/**
-	 * Get a tenant by ID with related users
-	 */
 	async getTenantById(id: string) {
 		return await this.tenantRepository.findOne({
 			where: { id },
@@ -44,18 +42,12 @@ export class TenantService {
 		});
 	}
 
-	/**
-	 * Get all tenants with related users
-	 */
 	async getAllTenants() {
 		return await this.tenantRepository.find({
 			relations: ['users'],
 		});
 	}
 
-	/**
-	 * Delete tenant by ID
-	 */
 	async deleteTenant(id: string) {
 		return await this.tenantRepository.delete({ id });
 	}

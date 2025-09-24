@@ -16,7 +16,7 @@ import {
 } from '@n8n/db';
 import { Service } from '@n8n/di';
 // eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
-import { In } from '@n8n/typeorm';
+import { DeepPartial, In } from '@n8n/typeorm';
 import glob from 'fast-glob';
 import { Credentials, ErrorReporter, InstanceSettings } from 'n8n-core';
 import { jsonParse, ensureError, UserError, UnexpectedError } from 'n8n-workflow';
@@ -831,12 +831,41 @@ export class SourceControlImportService {
 		}
 		const overriddenKeys = Object.keys(valueOverrides ?? {});
 
+		// for (const variable of importedVariables) {
+		// 	if (!variable.key) {
+		// 		continue;
+		// 	}
+		// 	// by default no value is stored remotely, so an empty string is returned
+		// 	// it must be changed to undefined so as to not overwrite existing values!
+		// 	if (variable.value === '') {
+		// 		variable.value = undefined;
+		// 	}
+		// 	if (overriddenKeys.includes(variable.key) && valueOverrides) {
+		// 		variable.value = valueOverrides[variable.key];
+		// 		overriddenKeys.splice(overriddenKeys.indexOf(variable.key), 1);
+		// 	}
+		// 	try {
+		// 		await this.variablesRepository.upsert({ ...variable }, ['id']);
+		// 	} catch (errorUpsert) {
+		// 		if (isUniqueConstraintError(errorUpsert as Error)) {
+		// 			this.logger.debug(`Variable ${variable.key} already exists, updating instead`);
+		// 			try {
+		// 				await this.variablesRepository.update({ key: variable.key }, { ...variable });
+		// 			} catch (errorUpdate) {
+		// 				this.logger.debug(`Failed to update variable ${variable.key}, skipping`);
+		// 				this.logger.debug((errorUpdate as Error).message);
+		// 			}
+		// 		}
+		// 	} finally {
+		// 		result.imported.push(variable.key);
+		// 	}
+		// }
+
 		for (const variable of importedVariables) {
 			if (!variable.key) {
 				continue;
 			}
-			// by default no value is stored remotely, so an empty string is returned
-			// it must be changed to undefined so as to not overwrite existing values!
+
 			if (variable.value === '') {
 				variable.value = undefined;
 			}
@@ -844,6 +873,13 @@ export class SourceControlImportService {
 				variable.value = valueOverrides[variable.key];
 				overriddenKeys.splice(overriddenKeys.indexOf(variable.key), 1);
 			}
+
+			// Use DeepPartial here
+			const variableData: DeepPartial<Variables> = {
+				...variable,
+				value: variable.value !== undefined ? variable.value : undefined,
+			};
+
 			try {
 				await this.variablesRepository.upsert(
 					{

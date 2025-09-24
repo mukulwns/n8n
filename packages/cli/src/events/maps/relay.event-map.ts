@@ -402,6 +402,7 @@ export type RelayEventMap = {
 		readOnlyInstance: boolean;
 		repoType: 'github' | 'gitlab' | 'other';
 		connected: boolean;
+		tenantId?: string;
 	};
 
 	'source-control-user-started-pull-ui': {

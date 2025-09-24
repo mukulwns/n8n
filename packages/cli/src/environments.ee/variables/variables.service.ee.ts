@@ -1,4 +1,4 @@
-import type { Variables } from '@n8n/db';
+import type { User, Variables } from '@n8n/db';
 import { generateNanoId, VariablesRepository } from '@n8n/db';
 import { Service } from '@n8n/di';
 

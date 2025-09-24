@@ -335,14 +335,16 @@ export class InsightsByPeriodRepository extends Repository<InsightsByPeriod> {
 		skip = 0,
 		take = 20,
 		sortBy = 'total:desc',
+		tenantId,
 	}: {
 		maxAgeInDays: number;
 		skip?: number;
 		take?: number;
 		sortBy?: string;
+		tenantId: string;
 	}) {
 		const [sortField, sortOrder] = this.parseSortingParams(sortBy);
-		const sumOfExecutions = sql`SUM(CASE WHEN insights.type IN (${TypeToNumber.success.toString()}, ${TypeToNumber.failure.toString()}) THEN value ELSE 0 END)`;
+		const sumOfExecutions = sql`SUM(CASE WHEN insights.${this.escapeField('type')} IN (${TypeToNumber.success.toString()}, ${TypeToNumber.failure.toString()}) THEN value ELSE 0 END)`;
 
 		const cte = sql`SELECT ${this.getAgeLimitQuery(maxAgeInDays)} AS start_date`;
 
@@ -353,24 +355,26 @@ export class InsightsByPeriodRepository extends Repository<InsightsByPeriod> {
 				'metadata.workflowName AS "workflowName"',
 				'metadata.projectId AS "projectId"',
 				'metadata.projectName AS "projectName"',
-				`SUM(CASE WHEN insights.type = ${TypeToNumber.success} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber.success]}"`,
-				`SUM(CASE WHEN insights.type = ${TypeToNumber.failure} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber.failure]}"`,
-				`SUM(CASE WHEN insights.type IN (${TypeToNumber.success}, ${TypeToNumber.failure}) THEN value ELSE 0 END) AS "total"`,
+				`SUM(CASE WHEN insights.${this.escapeField('type')} = ${TypeToNumber.success} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber.success]}"`,
+				`SUM(CASE WHEN insights.${this.escapeField('type')} = ${TypeToNumber.failure} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber.failure]}"`,
+				`SUM(CASE WHEN insights.${this.escapeField('type')} IN (${TypeToNumber.success}, ${TypeToNumber.failure}) THEN value ELSE 0 END) AS "total"`,
 				sql`CASE
 								WHEN ${sumOfExecutions} = 0 THEN 0
-								ELSE 1.0 * SUM(CASE WHEN insights.type = ${TypeToNumber.failure.toString()} THEN value ELSE 0 END) / ${sumOfExecutions}
+								ELSE 1.0 * SUM(CASE WHEN insights.${this.escapeField('type')} = ${TypeToNumber.failure.toString()} THEN value ELSE 0 END) / ${sumOfExecutions}
 							END AS "failureRate"`,
-				`SUM(CASE WHEN insights.type = ${TypeToNumber.runtime_ms} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber.runtime_ms]}"`,
-				`SUM(CASE WHEN insights.type = ${TypeToNumber.time_saved_min} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber.time_saved_min]}"`,
+				`SUM(CASE WHEN insights.${this.escapeField('type')} = ${TypeToNumber.runtime_ms} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber.runtime_ms]}"`,
+				`SUM(CASE WHEN insights.${this.escapeField('type')} = ${TypeToNumber.time_saved_min} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber.time_saved_min]}"`,
 				sql`CASE
 								WHEN ${sumOfExecutions} = 0	THEN 0
-								ELSE 1.0 * SUM(CASE WHEN insights.type = ${TypeToNumber.runtime_ms.toString()} THEN value ELSE 0 END) / ${sumOfExecutions}
+								ELSE 1.0 * SUM(CASE WHEN insights.${this.escapeField('type')} = ${TypeToNumber.runtime_ms.toString()} THEN value ELSE 0 END) / ${sumOfExecutions}
 							END AS "averageRunTime"`,
 			])
 			.innerJoin('insights.metadata', 'metadata')
 			// Use a cross join with the CTE
 			.innerJoin('date_range', 'date_range', '1=1')
+			.innerJoin('project', 'p', 'p.id = metadata.projectId')
 			.where('insights.periodStart >= date_range.start_date')
+			.andWhere('p.tenantId = :tenantId', { tenantId }) // tenant id filer
 			.groupBy('metadata.workflowId')
 			.addGroupBy('metadata.workflowName')
 			.addGroupBy('metadata.projectId')
@@ -387,18 +391,22 @@ export class InsightsByPeriodRepository extends Repository<InsightsByPeriod> {
 		maxAgeInDays,
 		periodUnit,
 		insightTypes,
-	}: { maxAgeInDays: number; periodUnit: PeriodUnit; insightTypes: TypeUnit[] }) {
+		tenantId,
+	}: { maxAgeInDays: number; periodUnit: PeriodUnit; insightTypes: TypeUnit[]; tenantId: string }) {
 		const cte = sql`SELECT ${this.getAgeLimitQuery(maxAgeInDays)} AS start_date`;
 
 		const typesAggregation = insightTypes.map((type) => {
-			return `SUM(CASE WHEN type = ${TypeToNumber[type]} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber[type]]}"`;
+			return `SUM(CASE WHEN insights.${this.escapeField('type')} = ${TypeToNumber[type]} THEN value ELSE 0 END) AS "${displayTypeName[TypeToNumber[type]]}"`;
 		});
 
-		const rawRowsQuery = this.createQueryBuilder()
+		const rawRowsQuery = this.createQueryBuilder('insights')
 			.addCommonTableExpression(cte, 'date_range')
 			.select([`${this.getPeriodStartExpr(periodUnit)} as "periodStart"`, ...typesAggregation])
 			.innerJoin('date_range', 'date_range', '1=1')
+			.innerJoin('insights_metadata', 'meta', 'meta.metaId = insights.metaId')
+			.innerJoin('project', 'p', 'p.id = meta.projectId')
 			.where(`${this.escapeField('periodStart')} >= date_range.start_date`)
+			.andWhere('p.tenantId = :tenantId', { tenantId })
 			.groupBy(this.getPeriodStartExpr(periodUnit))
 			.orderBy(this.getPeriodStartExpr(periodUnit), 'ASC');
 

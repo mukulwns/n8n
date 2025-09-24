@@ -99,7 +99,10 @@ export class WorkflowsController {
 
 		const newWorkflow = new WorkflowEntity();
 
-		Object.assign(newWorkflow, req.body);
+		Object.assign(newWorkflow, {
+			...req.body,
+			tenant_id: req.user.tenantId,
+		});
 
 		newWorkflow.versionId = uuid();
 
@@ -246,6 +249,13 @@ export class WorkflowsController {
 		}
 	}
 
+	// @Get('/new')
+	// async getNewName(req: WorkflowRequest.NewName) {
+	// 	const requestedName = req.query.name ?? this.globalConfig.workflows.defaultName;
+
+	// 	const name = await this.namingService.getUniqueWorkflowName(requestedName, req.user.tenantId);
+	// 	return { name };
+	// }
 	@Get('/new')
 	async getNewName(req: WorkflowRequest.NewName) {
 		const requestedName = req.query.name ?? this.globalConfig.workflows.defaultName;

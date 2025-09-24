@@ -22,7 +22,6 @@ import type { WorkflowStatistics } from './workflow-statistics';
 import type { WorkflowTagMapping } from './workflow-tag-mapping';
 import { objectRetriever, sqlite } from '../utils/transformers';
 
-
 @Entity()
 export class WorkflowEntity extends WithTimestampsAndStringId implements IWorkflowDb {
 	// TODO: Add XSS check
@@ -45,6 +44,9 @@ export class WorkflowEntity extends WithTimestampsAndStringId implements IWorkfl
 	 */
 	@Column({ default: false })
 	isArchived: boolean;
+
+	@Column({ length: 36 })
+	tenant_id: string;
 
 	@JsonColumn()
 	nodes: INode[];

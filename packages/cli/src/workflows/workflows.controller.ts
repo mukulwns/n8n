@@ -223,6 +223,7 @@ export class WorkflowsController {
 			publicApi: false,
 			projectId: project!.id,
 			projectType: project!.type,
+			// uiContext: req.body.uiContext,
 		});
 
 		const scopes = await this.workflowService.getWorkflowScopes(req.user, savedWorkflow.id);
@@ -239,7 +240,7 @@ export class WorkflowsController {
 				!!req.query.includeScopes,
 				!!req.query.includeFolders,
 				!!req.query.onlySharedWithMe,
-				req.user.tenantId || '', // Pass tenantId
+				req.user.tenantId, // Pass tenantId
 			);
 			res.json({ count, data });
 		} catch (maybeError) {

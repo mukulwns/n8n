@@ -1,3 +1,408 @@
+// import { computed, ref } from 'vue';
+// import Bowser from 'bowser';
+// import type {
+// 	IUserManagementSettings,
+// 	FrontendSettings,
+// 	FrontendModuleSettings,
+// } from '@n8n/api-types';
+// import * as eventsApi from '@n8n/rest-api-client/api/events';
+// import * as settingsApi from '@n8n/rest-api-client/api/settings';
+// import * as moduleSettingsApi from '@n8n/rest-api-client/api/module-settings';
+// import { testHealthEndpoint } from '@n8n/rest-api-client/api/templates';
+// import {
+// 	INSECURE_CONNECTION_WARNING,
+// 	LOCAL_STORAGE_EXPERIMENTAL_DOCKED_NODE_SETTINGS,
+// } from '@/constants';
+// import { STORES } from '@n8n/stores';
+// import { UserManagementAuthenticationMethod } from '@/Interface';
+// import type { IDataObject, WorkflowSettings } from 'n8n-workflow';
+// import { defineStore } from 'pinia';
+// import { useRootStore } from '@n8n/stores/useRootStore';
+// import { makeRestApiRequest } from '@n8n/rest-api-client';
+// import { useLocalStorage } from '@vueuse/core';
+
+// export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
+// 	const initialized = ref(false);
+// 	const settings = ref<FrontendSettings>({} as FrontendSettings);
+// 	const moduleSettings = ref<FrontendModuleSettings>({});
+// 	const userManagement = ref<IUserManagementSettings>({
+// 		quota: -1,
+// 		showSetupOnFirstLoad: useLocalStorage('showSetupOnFirstLoad', false).value, // Use localStorage for persistence
+// 		smtpSetup: false,
+// 		authenticationMethod: UserManagementAuthenticationMethod.Email,
+// 	});
+// 	const templatesEndpointHealthy = ref(false);
+// 	const api = ref({
+// 		enabled: false,
+// 		latestVersion: 0,
+// 		path: '/',
+// 		swaggerUi: {
+// 			enabled: false,
+// 		},
+// 	});
+// 	const mfa = ref({ enabled: false });
+// 	const folders = ref({ enabled: false });
+
+// 	const saveDataErrorExecution = ref<WorkflowSettings.SaveDataExecution>('all');
+// 	const saveDataSuccessExecution = ref<WorkflowSettings.SaveDataExecution>('all');
+// 	const saveManualExecutions = ref(false);
+// 	const saveDataProgressExecution = ref(false);
+// 	const isMFAEnforced = ref(false);
+
+// 	const isDocker = computed(() => settings.value?.isDocker ?? false);
+// 	const databaseType = computed(() => settings.value?.databaseType);
+// 	const planName = computed(() => settings.value?.license.planName ?? 'Enterprise');
+// 	const consumerId = computed(() => settings.value?.license.consumerId);
+// 	const binaryDataMode = computed(() => settings.value?.binaryDataMode);
+// 	const pruning = computed(() => settings.value?.pruning);
+// 	const security = computed(() => ({
+// 		blockFileAccessToN8nFiles: settings.value.security.blockFileAccessToN8nFiles,
+// 		secureCookie: settings.value.authCookie.secure,
+// 	}));
+// 	const isEnterpriseFeatureEnabled = computed(() => settings.value.enterprise);
+// 	const nodeJsVersion = computed(() => settings.value.nodeJsVersion);
+// 	const concurrency = computed(() => settings.value.concurrency);
+// 	const isConcurrencyEnabled = computed(() => concurrency.value !== -1);
+// 	const isPublicApiEnabled = computed(() => api.value.enabled);
+// 	const isSwaggerUIEnabled = computed(() => api.value.swaggerUi.enabled);
+// 	const isPreviewMode = computed(() => settings.value.previewMode);
+// 	const publicApiLatestVersion = computed(() => api.value.latestVersion);
+// 	const publicApiPath = computed(() => api.value.path);
+// 	const isAiAssistantEnabled = computed(() => settings.value.aiAssistant?.enabled);
+// 	const isAskAiEnabled = computed(() => settings.value.askAi?.enabled);
+// 	const showSetupPage = computed(() => userManagement.value.showSetupOnFirstLoad);
+// 	const deploymentType = computed(() => settings.value.deployment?.type || 'default');
+// 	const isCloudDeployment = computed(() => settings.value.deployment?.type === 'cloud');
+// 	const activeModules = computed(() => settings.value.activeModules);
+// 	const isModuleActive = (moduleName: string) => {
+// 		return activeModules.value.includes(moduleName);
+// 	};
+// 	const partialExecutionVersion = computed<1 | 2>(() => {
+// 		const defaultVersion = settings.value.partialExecution?.version ?? 1;
+// 		const userVersion = useLocalStorage('PartialExecution.version', -1).value;
+// 		const version = userVersion === -1 ? defaultVersion : userVersion;
+// 		if (![1, 2].includes(version)) {
+// 			return 1;
+// 		}
+// 		return version as 1 | 2;
+// 	});
+// 	const isAiCreditsEnabled = computed(() => settings.value.aiCredits?.enabled);
+// 	const aiCreditsQuota = computed(() => settings.value.aiCredits?.credits);
+// 	const isSmtpSetup = computed(() => userManagement.value.smtpSetup);
+// 	const isPersonalizationSurveyEnabled = computed(
+// 		() => settings.value.telemetry?.enabled && settings.value.personalizationSurveyEnabled,
+// 	);
+// 	const telemetry = computed(() => settings.value.telemetry);
+// 	const logLevel = computed(() => settings.value.logLevel);
+// 	const isTelemetryEnabled = computed(
+// 		() => settings.value.telemetry && settings.value.telemetry.enabled,
+// 	);
+// 	const isMFAEnforcementLicensed = computed(() => {
+// 		return settings.value.enterprise?.mfaEnforcement ?? false;
+// 	});
+// 	const isMfaFeatureEnabled = computed(() => mfa.value.enabled);
+// 	const isFoldersFeatureEnabled = computed(() => folders.value.enabled);
+// 	const areTagsEnabled = computed(() =>
+// 		settings.value.workflowTagsDisabled !== undefined ? !settings.value.workflowTagsDisabled : true,
+// 	);
+// 	const isHiringBannerEnabled = computed(() => settings.value.hiringBannerEnabled);
+// 	const isTemplatesEnabled = computed(() =>
+// 		Boolean(settings.value.templates && settings.value.templates.enabled),
+// 	);
+// 	const isTemplatesEndpointReachable = computed(() => templatesEndpointHealthy.value);
+// 	const templatesHost = computed(() => settings.value.templates.host);
+// 	const pushBackend = computed(() => settings.value.pushBackend);
+// 	const isCommunityNodesFeatureEnabled = computed(() => settings.value.communityNodesEnabled);
+// 	const isUnverifiedPackagesEnabled = computed(
+// 		() => settings.value.unverifiedCommunityNodesEnabled,
+// 	);
+// 	const allowedModules = computed(() => settings.value.allowedModules);
+// 	const isQueueModeEnabled = computed(() => settings.value.executionMode === 'queue');
+// 	const isMultiMain = computed(() => settings.value.isMultiMain);
+// 	const isWorkerViewAvailable = computed(() => !!settings.value.enterprise?.workerView);
+// 	const workflowCallerPolicyDefaultOption = computed(
+// 		() => settings.value.workflowCallerPolicyDefaultOption,
+// 	);
+// 	const permanentlyDismissedBanners = computed(() => settings.value.banners?.dismissed ?? []);
+// 	const isCommunityPlan = computed(() => planName.value.toLowerCase() === 'community');
+// 	const isDevRelease = computed(() => settings.value.releaseChannel === 'dev');
+
+// 	// const setSettings = (newSettings: FrontendSettings) => {
+// 	// 	settings.value = newSettings;
+// 	// 	userManagement.value = newSettings.userManagement;
+// 	// 	api.value = settings.value.publicApi;
+// 	// 	mfa.value.enabled = settings.value.mfa?.enabled;
+// 	// 	folders.value.enabled = settings.value.folders?.enabled;
+
+// 	// 	// Sync showSetupOnFirstLoad with localStorage
+// 	// 	userManagement.value.showSetupOnFirstLoad = useLocalStorage(
+// 	// 		'showSetupOnFirstLoad',
+// 	// 		newSettings.userManagement.showSetupOnFirstLoad,
+// 	// 	).value;
+
+// 	// 	if (settings.value.versionCli) {
+// 	// 		useRootStore().setVersionCli(settings.value.versionCli);
+// 	// 	}
+
+// 	// 	if (settings.value.authCookie.secure) {
+// 	// 		const { browser } = Bowser.parse(navigator.userAgent);
+// 	// 		if (
+// 	// 			location.protocol === 'http:' &&
+// 	// 			(!['localhost', '127.0.0.1'].includes(location.hostname) || browser.name === 'Safari')
+// 	// 		) {
+// 	// 			document.write(INSECURE_CONNECTION_WARNING);
+// 	// 			return;
+// 	// 		}
+// 	// 	}
+// 	// };
+// 	const setSettings = (newSettings: FrontendSettings) => {
+// 		settings.value = {
+// 			...newSettings,
+
+// 			// 🚀 Force enable enterprise-only features (override Community Edition limit)
+// 			enterprise: {
+// 				...newSettings.enterprise,
+// 				sharing: true,
+// 				advancedPermissions: true,
+// 				projects: {
+// 					team: {
+// 						limit: 1000, // increase team member limit
+// 					},
+// 				},
+// 			},
+
+// 			// 🚀 Fake license info so UI won’t show "upgrade to enterprise"
+// 			license: {
+// 				...newSettings.license,
+// 				planName: 'Enterprise',
+// 				consumerId: 'saas-license',
+// 				environment: 'production',
+// 			},
+// 		};
+
+// 		userManagement.value = settings.value.userManagement;
+// 		api.value = settings.value.publicApi;
+// 		mfa.value.enabled = settings.value.mfa?.enabled;
+// 		folders.value.enabled = settings.value.folders?.enabled;
+
+// 		// ✅ Keep your showSetupOnFirstLoad sync with localStorage
+// 		userManagement.value.showSetupOnFirstLoad = useLocalStorage(
+// 			'showSetupOnFirstLoad',
+// 			newSettings.userManagement.showSetupOnFirstLoad,
+// 		).value;
+
+// 		if (settings.value.versionCli) {
+// 			useRootStore().setVersionCli(settings.value.versionCli);
+// 		}
+
+// 		if (settings.value.authCookie.secure) {
+// 			const { browser } = Bowser.parse(navigator.userAgent);
+// 			if (
+// 				location.protocol === 'http:' &&
+// 				(!['localhost', '127.0.0.1'].includes(location.hostname) || browser.name === 'Safari')
+// 			) {
+// 				document.write(INSECURE_CONNECTION_WARNING);
+// 				return;
+// 			}
+// 		}
+// 	};
+
+// 	const toggleShowSetupOnFirstLoad = async () => {
+// 		const newValue = !userManagement.value.showSetupOnFirstLoad;
+// 		userManagement.value.showSetupOnFirstLoad = newValue;
+// 		useLocalStorage('showSetupOnFirstLoad', newValue).value = newValue; // Update localStorage
+// 		// try {
+// 		// 	const rootStore = useRootStore();
+// 		// 	await makeRestApiRequest(rootStore.restApiContext, 'POST', '/settings/update', {
+// 		// 		showSetupOnFirstLoad: newValue,
+// 		// 	});
+// 		// } catch (error: any) {
+// 		// 	console.error(`Failed to sync showSetupOnFirstLoad with backend: ${error.message}`);
+// 		// 	// Fallback to localStorage if backend fails
+// 		// }
+// 	};
+
+// 	const setAllowedModules = (allowedModules: FrontendSettings['allowedModules']) => {
+// 		settings.value.allowedModules = allowedModules;
+// 	};
+
+// 	const setSaveDataErrorExecution = (newValue: WorkflowSettings.SaveDataExecution) => {
+// 		saveDataErrorExecution.value = newValue;
+// 	};
+
+// 	const setSaveDataSuccessExecution = (newValue: WorkflowSettings.SaveDataExecution) => {
+// 		saveDataSuccessExecution.value = newValue;
+// 	};
+
+// 	const setSaveManualExecutions = (newValue: boolean) => {
+// 		saveManualExecutions.value = newValue;
+// 	};
+
+// 	const setSaveDataProgressExecution = (newValue: boolean) => {
+// 		saveDataProgressExecution.value = newValue;
+// 	};
+
+// 	const getSettings = async () => {
+// 		const rootStore = useRootStore();
+// 		const fetchedSettings = await settingsApi.getSettings(rootStore.restApiContext);
+// 		setSettings(fetchedSettings);
+// 		settings.value.communityNodesEnabled = fetchedSettings.communityNodesEnabled;
+// 		settings.value.unverifiedCommunityNodesEnabled =
+// 			fetchedSettings.unverifiedCommunityNodesEnabled;
+// 		setAllowedModules(fetchedSettings.allowedModules);
+// 		setSaveDataErrorExecution(fetchedSettings.saveDataErrorExecution);
+// 		setSaveDataSuccessExecution(fetchedSettings.saveDataSuccessExecution);
+// 		setSaveDataProgressExecution(fetchedSettings.saveExecutionProgress);
+// 		setSaveManualExecutions(fetchedSettings.saveManualExecutions);
+// 		isMFAEnforced.value = settings.value.mfa?.enforced ?? false;
+
+// 		rootStore.setUrlBaseWebhook(fetchedSettings.urlBaseWebhook);
+// 		rootStore.setUrlBaseEditor(fetchedSettings.urlBaseEditor);
+// 		rootStore.setEndpointForm(fetchedSettings.endpointForm);
+// 		rootStore.setEndpointFormTest(fetchedSettings.endpointFormTest);
+// 		rootStore.setEndpointFormWaiting(fetchedSettings.endpointFormWaiting);
+// 		rootStore.setEndpointWebhook(fetchedSettings.endpointWebhook);
+// 		rootStore.setEndpointWebhookTest(fetchedSettings.endpointWebhookTest);
+// 		rootStore.setEndpointWebhookWaiting(fetchedSettings.endpointWebhookWaiting);
+// 		rootStore.setTimezone(fetchedSettings.timezone);
+// 		rootStore.setExecutionTimeout(fetchedSettings.executionTimeout);
+// 		rootStore.setMaxExecutionTimeout(fetchedSettings.maxExecutionTimeout);
+// 		rootStore.setInstanceId(fetchedSettings.instanceId);
+// 		rootStore.setOauthCallbackUrls(fetchedSettings.oauthCallbackUrls);
+// 		rootStore.setN8nMetadata(fetchedSettings.n8nMetadata || {});
+// 		rootStore.setDefaultLocale(fetchedSettings.defaultLocale);
+// 		rootStore.setBinaryDataMode(fetchedSettings.binaryDataMode);
+
+// 		if (fetchedSettings.telemetry.enabled) {
+// 			void eventsApi.sessionStarted(rootStore.restApiContext);
+// 		}
+// 	};
+
+// 	const initialize = async () => {
+// 		if (initialized.value) {
+// 			return;
+// 		}
+// 		await getSettings();
+// 		initialized.value = true;
+// 		await getModuleSettings();
+// 	};
+
+// 	const stopShowingSetupPage = () => {
+// 		userManagement.value.showSetupOnFirstLoad = false;
+// 		useLocalStorage('showSetupOnFirstLoad', false).value = false; // Update localStorage
+// 	};
+
+// 	const disableTemplates = () => {
+// 		settings.value = {
+// 			...settings.value,
+// 			templates: {
+// 				...settings.value.templates,
+// 				enabled: false,
+// 			},
+// 		};
+// 	};
+
+// 	const testTemplatesEndpoint = async () => {
+// 		const timeout = new Promise((_, reject) => setTimeout(() => reject(), 2000));
+// 		await Promise.race([testHealthEndpoint(templatesHost.value), timeout]);
+// 		templatesEndpointHealthy.value = true;
+// 	};
+
+// 	const getTimezones = async (): Promise<IDataObject> => {
+// 		const rootStore = useRootStore();
+// 		return await makeRestApiRequest(rootStore.restApiContext, 'GET', '/options/timezones');
+// 	};
+
+// 	const reset = () => {
+// 		settings.value = {} as FrontendSettings;
+// 	};
+
+// 	const getModuleSettings = async () => {
+// 		const fetched = await moduleSettingsApi.getModuleSettings(useRootStore().restApiContext);
+// 		moduleSettings.value = fetched;
+// 	};
+
+// 	const experimental__dockedNodeSettingsEnabled = useLocalStorage(
+// 		LOCAL_STORAGE_EXPERIMENTAL_DOCKED_NODE_SETTINGS,
+// 		false,
+// 		{ writeDefaults: false },
+// 	);
+
+// 	return {
+// 		settings,
+// 		userManagement,
+// 		templatesEndpointHealthy,
+// 		api,
+// 		mfa,
+// 		isDocker,
+// 		isDevRelease,
+// 		isEnterpriseFeatureEnabled,
+// 		databaseType,
+// 		planName,
+// 		consumerId,
+// 		binaryDataMode,
+// 		pruning,
+// 		security,
+// 		nodeJsVersion,
+// 		concurrency,
+// 		isConcurrencyEnabled,
+// 		isPublicApiEnabled,
+// 		isSwaggerUIEnabled,
+// 		isPreviewMode,
+// 		publicApiLatestVersion,
+// 		publicApiPath,
+// 		showSetupPage,
+// 		deploymentType,
+// 		isCloudDeployment,
+// 		isSmtpSetup,
+// 		isPersonalizationSurveyEnabled,
+// 		telemetry,
+// 		logLevel,
+// 		isTelemetryEnabled,
+// 		isMfaFeatureEnabled,
+// 		isFoldersFeatureEnabled,
+// 		isAiAssistantEnabled,
+// 		areTagsEnabled,
+// 		isHiringBannerEnabled,
+// 		isTemplatesEnabled,
+// 		isTemplatesEndpointReachable,
+// 		templatesHost,
+// 		pushBackend,
+// 		isCommunityNodesFeatureEnabled,
+// 		isUnverifiedPackagesEnabled,
+// 		allowedModules,
+// 		isQueueModeEnabled,
+// 		isMultiMain,
+// 		isWorkerViewAvailable,
+// 		workflowCallerPolicyDefaultOption,
+// 		permanentlyDismissedBanners,
+// 		saveDataErrorExecution,
+// 		saveDataSuccessExecution,
+// 		saveManualExecutions,
+// 		saveDataProgressExecution,
+// 		isCommunityPlan,
+// 		isAskAiEnabled,
+// 		isAiCreditsEnabled,
+// 		aiCreditsQuota,
+// 		experimental__dockedNodeSettingsEnabled,
+// 		partialExecutionVersion,
+// 		reset,
+// 		getTimezones,
+// 		testTemplatesEndpoint,
+// 		disableTemplates,
+// 		stopShowingSetupPage,
+// 		getSettings,
+// 		setSettings,
+// 		initialize,
+// 		getModuleSettings,
+// 		moduleSettings,
+// 		isMFAEnforcementLicensed,
+// 		isMFAEnforced,
+// 		activeModules,
+// 		isModuleActive,
+// 		toggleShowSetupOnFirstLoad, // New action
+// 	};
+// });
 import { computed, ref } from 'vue';
 import Bowser from 'bowser';
 import type {
@@ -27,7 +432,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const moduleSettings = ref<FrontendModuleSettings>({});
 	const userManagement = ref<IUserManagementSettings>({
 		quota: -1,
-		showSetupOnFirstLoad: useLocalStorage('showSetupOnFirstLoad', false).value, // Use localStorage for persistence
+		showSetupOnFirstLoad: useLocalStorage('showSetupOnFirstLoad', false).value,
 		smtpSetup: false,
 		authenticationMethod: UserManagementAuthenticationMethod.Email,
 	});
@@ -36,9 +441,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		enabled: false,
 		latestVersion: 0,
 		path: '/',
-		swaggerUi: {
-			enabled: false,
-		},
+		swaggerUi: { enabled: false },
 	});
 	const mfa = ref({ enabled: false });
 	const folders = ref({ enabled: false });
@@ -49,6 +452,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const saveDataProgressExecution = ref(false);
 	const isMFAEnforced = ref(false);
 
+	// ---------------- COMPUTEDS ----------------
 	const isDocker = computed(() => settings.value?.isDocker ?? false);
 	const databaseType = computed(() => settings.value?.databaseType);
 	const planName = computed(() => settings.value?.license.planName ?? 'Enterprise');
@@ -74,18 +478,15 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const deploymentType = computed(() => settings.value.deployment?.type || 'default');
 	const isCloudDeployment = computed(() => settings.value.deployment?.type === 'cloud');
 	const activeModules = computed(() => settings.value.activeModules);
-	const isModuleActive = (moduleName: string) => {
-		return activeModules.value.includes(moduleName);
-	};
+	const isModuleActive = (moduleName: string) => activeModules.value.includes(moduleName);
+
 	const partialExecutionVersion = computed<1 | 2>(() => {
 		const defaultVersion = settings.value.partialExecution?.version ?? 1;
 		const userVersion = useLocalStorage('PartialExecution.version', -1).value;
 		const version = userVersion === -1 ? defaultVersion : userVersion;
-		if (![1, 2].includes(version)) {
-			return 1;
-		}
-		return version as 1 | 2;
+		return [1, 2].includes(version) ? (version as 1 | 2) : 1;
 	});
+
 	const isAiCreditsEnabled = computed(() => settings.value.aiCredits?.enabled);
 	const aiCreditsQuota = computed(() => settings.value.aiCredits?.credits);
 	const isSmtpSetup = computed(() => userManagement.value.smtpSetup);
@@ -94,21 +495,17 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	);
 	const telemetry = computed(() => settings.value.telemetry);
 	const logLevel = computed(() => settings.value.logLevel);
-	const isTelemetryEnabled = computed(
-		() => settings.value.telemetry && settings.value.telemetry.enabled,
+	const isTelemetryEnabled = computed(() => settings.value.telemetry?.enabled);
+	const isMFAEnforcementLicensed = computed(
+		() => settings.value.enterprise?.mfaEnforcement ?? false,
 	);
-	const isMFAEnforcementLicensed = computed(() => {
-		return settings.value.enterprise?.mfaEnforcement ?? false;
-	});
 	const isMfaFeatureEnabled = computed(() => mfa.value.enabled);
 	const isFoldersFeatureEnabled = computed(() => folders.value.enabled);
 	const areTagsEnabled = computed(() =>
 		settings.value.workflowTagsDisabled !== undefined ? !settings.value.workflowTagsDisabled : true,
 	);
 	const isHiringBannerEnabled = computed(() => settings.value.hiringBannerEnabled);
-	const isTemplatesEnabled = computed(() =>
-		Boolean(settings.value.templates && settings.value.templates.enabled),
-	);
+	const isTemplatesEnabled = computed(() => Boolean(settings.value.templates?.enabled));
 	const isTemplatesEndpointReachable = computed(() => templatesEndpointHealthy.value);
 	const templatesHost = computed(() => settings.value.templates.host);
 	const pushBackend = computed(() => settings.value.pushBackend);
@@ -127,51 +524,23 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const isCommunityPlan = computed(() => planName.value.toLowerCase() === 'community');
 	const isDevRelease = computed(() => settings.value.releaseChannel === 'dev');
 
-	// const setSettings = (newSettings: FrontendSettings) => {
-	// 	settings.value = newSettings;
-	// 	userManagement.value = newSettings.userManagement;
-	// 	api.value = settings.value.publicApi;
-	// 	mfa.value.enabled = settings.value.mfa?.enabled;
-	// 	folders.value.enabled = settings.value.folders?.enabled;
-
-	// 	// Sync showSetupOnFirstLoad with localStorage
-	// 	userManagement.value.showSetupOnFirstLoad = useLocalStorage(
-	// 		'showSetupOnFirstLoad',
-	// 		newSettings.userManagement.showSetupOnFirstLoad,
-	// 	).value;
-
-	// 	if (settings.value.versionCli) {
-	// 		useRootStore().setVersionCli(settings.value.versionCli);
-	// 	}
-
-	// 	if (settings.value.authCookie.secure) {
-	// 		const { browser } = Bowser.parse(navigator.userAgent);
-	// 		if (
-	// 			location.protocol === 'http:' &&
-	// 			(!['localhost', '127.0.0.1'].includes(location.hostname) || browser.name === 'Safari')
-	// 		) {
-	// 			document.write(INSECURE_CONNECTION_WARNING);
-	// 			return;
-	// 		}
-	// 	}
-	// };
+	// ---------------- ACTIONS ----------------
 	const setSettings = (newSettings: FrontendSettings) => {
+		// Inject overrides here
 		settings.value = {
 			...newSettings,
 
-			// 🚀 Force enable enterprise-only features (override Community Edition limit)
+			// 🚀 Force enterprise features
 			enterprise: {
 				...newSettings.enterprise,
 				sharing: true,
 				advancedPermissions: true,
-				projects: {
-					team: {
-						limit: 1000, // increase team member limit
-					},
-				},
+				mfaEnforcement: true,
+				projects: { team: { limit: 1000 } },
+				workerView: true,
 			},
 
-			// 🚀 Fake license info so UI won’t show "upgrade to enterprise"
+			// 🚀 Fake license info
 			license: {
 				...newSettings.license,
 				planName: 'Enterprise',
@@ -180,21 +549,24 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 			},
 		};
 
+		// Keep other state in sync
 		userManagement.value = settings.value.userManagement;
 		api.value = settings.value.publicApi;
 		mfa.value.enabled = settings.value.mfa?.enabled;
 		folders.value.enabled = settings.value.folders?.enabled;
 
-		// ✅ Keep your showSetupOnFirstLoad sync with localStorage
+		// Sync setup flag with localStorage
 		userManagement.value.showSetupOnFirstLoad = useLocalStorage(
 			'showSetupOnFirstLoad',
 			newSettings.userManagement.showSetupOnFirstLoad,
 		).value;
 
+		// Version sync
 		if (settings.value.versionCli) {
 			useRootStore().setVersionCli(settings.value.versionCli);
 		}
 
+		// Security check
 		if (settings.value.authCookie.secure) {
 			const { browser } = Bowser.parse(navigator.userAgent);
 			if (
@@ -202,86 +574,71 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 				(!['localhost', '127.0.0.1'].includes(location.hostname) || browser.name === 'Safari')
 			) {
 				document.write(INSECURE_CONNECTION_WARNING);
-				return;
 			}
 		}
 	};
 
-	const toggleShowSetupOnFirstLoad = async () => {
+	const toggleShowSetupOnFirstLoad = () => {
 		const newValue = !userManagement.value.showSetupOnFirstLoad;
 		userManagement.value.showSetupOnFirstLoad = newValue;
-		useLocalStorage('showSetupOnFirstLoad', newValue).value = newValue; // Update localStorage
-		// try {
-		// 	const rootStore = useRootStore();
-		// 	await makeRestApiRequest(rootStore.restApiContext, 'POST', '/settings/update', {
-		// 		showSetupOnFirstLoad: newValue,
-		// 	});
-		// } catch (error: any) {
-		// 	console.error(`Failed to sync showSetupOnFirstLoad with backend: ${error.message}`);
-		// 	// Fallback to localStorage if backend fails
-		// }
+		useLocalStorage('showSetupOnFirstLoad', newValue).value = newValue;
 	};
 
-	const setAllowedModules = (allowedModules: FrontendSettings['allowedModules']) => {
-		settings.value.allowedModules = allowedModules;
+	const setAllowedModules = (allowed: FrontendSettings['allowedModules']) => {
+		settings.value.allowedModules = allowed;
 	};
 
-	const setSaveDataErrorExecution = (newValue: WorkflowSettings.SaveDataExecution) => {
-		saveDataErrorExecution.value = newValue;
+	const setSaveDataErrorExecution = (val: WorkflowSettings.SaveDataExecution) => {
+		saveDataErrorExecution.value = val;
 	};
-
-	const setSaveDataSuccessExecution = (newValue: WorkflowSettings.SaveDataExecution) => {
-		saveDataSuccessExecution.value = newValue;
+	const setSaveDataSuccessExecution = (val: WorkflowSettings.SaveDataExecution) => {
+		saveDataSuccessExecution.value = val;
 	};
-
-	const setSaveManualExecutions = (newValue: boolean) => {
-		saveManualExecutions.value = newValue;
+	const setSaveManualExecutions = (val: boolean) => {
+		saveManualExecutions.value = val;
 	};
-
-	const setSaveDataProgressExecution = (newValue: boolean) => {
-		saveDataProgressExecution.value = newValue;
+	const setSaveDataProgressExecution = (val: boolean) => {
+		saveDataProgressExecution.value = val;
 	};
 
 	const getSettings = async () => {
 		const rootStore = useRootStore();
-		const fetchedSettings = await settingsApi.getSettings(rootStore.restApiContext);
-		setSettings(fetchedSettings);
-		settings.value.communityNodesEnabled = fetchedSettings.communityNodesEnabled;
-		settings.value.unverifiedCommunityNodesEnabled =
-			fetchedSettings.unverifiedCommunityNodesEnabled;
-		setAllowedModules(fetchedSettings.allowedModules);
-		setSaveDataErrorExecution(fetchedSettings.saveDataErrorExecution);
-		setSaveDataSuccessExecution(fetchedSettings.saveDataSuccessExecution);
-		setSaveDataProgressExecution(fetchedSettings.saveExecutionProgress);
-		setSaveManualExecutions(fetchedSettings.saveManualExecutions);
+		const fetched = await settingsApi.getSettings(rootStore.restApiContext);
+		setSettings(fetched);
+
+		settings.value.communityNodesEnabled = fetched.communityNodesEnabled;
+		settings.value.unverifiedCommunityNodesEnabled = fetched.unverifiedCommunityNodesEnabled;
+		setAllowedModules(fetched.allowedModules);
+		setSaveDataErrorExecution(fetched.saveDataErrorExecution);
+		setSaveDataSuccessExecution(fetched.saveDataSuccessExecution);
+		setSaveDataProgressExecution(fetched.saveExecutionProgress);
+		setSaveManualExecutions(fetched.saveManualExecutions);
 		isMFAEnforced.value = settings.value.mfa?.enforced ?? false;
 
-		rootStore.setUrlBaseWebhook(fetchedSettings.urlBaseWebhook);
-		rootStore.setUrlBaseEditor(fetchedSettings.urlBaseEditor);
-		rootStore.setEndpointForm(fetchedSettings.endpointForm);
-		rootStore.setEndpointFormTest(fetchedSettings.endpointFormTest);
-		rootStore.setEndpointFormWaiting(fetchedSettings.endpointFormWaiting);
-		rootStore.setEndpointWebhook(fetchedSettings.endpointWebhook);
-		rootStore.setEndpointWebhookTest(fetchedSettings.endpointWebhookTest);
-		rootStore.setEndpointWebhookWaiting(fetchedSettings.endpointWebhookWaiting);
-		rootStore.setTimezone(fetchedSettings.timezone);
-		rootStore.setExecutionTimeout(fetchedSettings.executionTimeout);
-		rootStore.setMaxExecutionTimeout(fetchedSettings.maxExecutionTimeout);
-		rootStore.setInstanceId(fetchedSettings.instanceId);
-		rootStore.setOauthCallbackUrls(fetchedSettings.oauthCallbackUrls);
-		rootStore.setN8nMetadata(fetchedSettings.n8nMetadata || {});
-		rootStore.setDefaultLocale(fetchedSettings.defaultLocale);
-		rootStore.setBinaryDataMode(fetchedSettings.binaryDataMode);
+		rootStore.setUrlBaseWebhook(fetched.urlBaseWebhook);
+		rootStore.setUrlBaseEditor(fetched.urlBaseEditor);
+		rootStore.setEndpointForm(fetched.endpointForm);
+		rootStore.setEndpointFormTest(fetched.endpointFormTest);
+		rootStore.setEndpointFormWaiting(fetched.endpointFormWaiting);
+		rootStore.setEndpointWebhook(fetched.endpointWebhook);
+		rootStore.setEndpointWebhookTest(fetched.endpointWebhookTest);
+		rootStore.setEndpointWebhookWaiting(fetched.endpointWebhookWaiting);
+		rootStore.setTimezone(fetched.timezone);
+		rootStore.setExecutionTimeout(fetched.executionTimeout);
+		rootStore.setMaxExecutionTimeout(fetched.maxExecutionTimeout);
+		rootStore.setInstanceId(fetched.instanceId);
+		rootStore.setOauthCallbackUrls(fetched.oauthCallbackUrls);
+		rootStore.setN8nMetadata(fetched.n8nMetadata || {});
+		rootStore.setDefaultLocale(fetched.defaultLocale);
+		rootStore.setBinaryDataMode(fetched.binaryDataMode);
 
-		if (fetchedSettings.telemetry.enabled) {
+		if (fetched.telemetry.enabled) {
 			void eventsApi.sessionStarted(rootStore.restApiContext);
 		}
 	};
 
 	const initialize = async () => {
-		if (initialized.value) {
-			return;
-		}
+		if (initialized.value) return;
 		await getSettings();
 		initialized.value = true;
 		await getModuleSettings();
@@ -289,16 +646,13 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 
 	const stopShowingSetupPage = () => {
 		userManagement.value.showSetupOnFirstLoad = false;
-		useLocalStorage('showSetupOnFirstLoad', false).value = false; // Update localStorage
+		useLocalStorage('showSetupOnFirstLoad', false).value = false;
 	};
 
 	const disableTemplates = () => {
 		settings.value = {
 			...settings.value,
-			templates: {
-				...settings.value.templates,
-				enabled: false,
-			},
+			templates: { ...settings.value.templates, enabled: false },
 		};
 	};
 
@@ -318,8 +672,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	};
 
 	const getModuleSettings = async () => {
-		const fetched = await moduleSettingsApi.getModuleSettings(useRootStore().restApiContext);
-		moduleSettings.value = fetched;
+		moduleSettings.value = await moduleSettingsApi.getModuleSettings(useRootStore().restApiContext);
 	};
 
 	const experimental__dockedNodeSettingsEnabled = useLocalStorage(
@@ -328,6 +681,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		{ writeDefaults: false },
 	);
 
+	// ---------------- RETURN ----------------
 	return {
 		settings,
 		userManagement,
@@ -400,6 +754,6 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		isMFAEnforced,
 		activeModules,
 		isModuleActive,
-		toggleShowSetupOnFirstLoad, // New action
+		toggleShowSetupOnFirstLoad,
 	};
 });

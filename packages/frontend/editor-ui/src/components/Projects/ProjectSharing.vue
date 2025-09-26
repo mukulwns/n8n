@@ -114,7 +114,6 @@ watch(
 <template>
 	<div>
 		<N8nSelect
-			v-if="!props.readonly"
 			:model-value="selectedProject"
 			data-test-id="project-sharing-select"
 			:filterable="true"
@@ -123,7 +122,6 @@ watch(
 			:default-first-option="true"
 			:no-data-text="noDataText"
 			size="large"
-			:disabled="props.readonly"
 			@update:model-value="onProjectSelected"
 		>
 			<template #prefix>
@@ -157,7 +155,7 @@ watch(
 			>
 				<ProjectSharingInfo :project="project" />
 				<N8nSelect
-					v-if="props.roles?.length && !props.static"
+					v-if="props.roles?.length"
 					:class="$style.projectRoleSelect"
 					:model-value="props.roles[0]"
 					:disabled="props.readonly"
@@ -167,7 +165,6 @@ watch(
 					<N8nOption v-for="role in roles" :key="role.role" :value="role.role" :label="role.name" />
 				</N8nSelect>
 				<N8nButton
-					v-if="!props.static"
 					type="tertiary"
 					native-type="button"
 					square

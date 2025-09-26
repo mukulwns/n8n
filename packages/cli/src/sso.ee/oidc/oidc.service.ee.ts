@@ -189,6 +189,7 @@ export class OidcService {
 			key: OIDC_PREFERENCES_DB_KEY,
 			value: JSON.stringify(DEFAULT_OIDC_CONFIG),
 			loadOnStartup: true,
+			// tenantId, // 👈tenantId
 		});
 		return DEFAULT_OIDC_RUNTIME_CONFIG;
 	}

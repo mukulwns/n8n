@@ -244,65 +244,57 @@ export class SamlService {
 
 	async setSamlPreferences(
 		prefs: Partial<SamlPreferences>,
-		tryFallback: boolean = false,
+		tenantId?: string,
+		tryFallback = false,
 	): Promise<SamlPreferences | undefined> {
 		await this.loadSamlify();
+
 		const previousMetadataUrl = this._samlPreferences.metadataUrl;
-		await this.loadPreferencesWithoutValidation(prefs);
+
+		// merge incoming prefs
+		await this.loadPreferencesWithoutValidation(prefs, tenantId);
+
 		if (prefs.metadataUrl) {
 			try {
 				const fetchedMetadata = await this.fetchMetadataFromUrl();
 				if (fetchedMetadata) {
 					this._samlPreferences.metadata = fetchedMetadata;
 				} else {
-					// in this case the metadata url didn't produce a valid metadata for SAML
-					// therefore we are rejecting the change to it
 					throw new InvalidSamlMetadataUrlError(prefs.metadataUrl);
 				}
 			} catch (error) {
 				this._samlPreferences.metadataUrl = previousMetadataUrl;
-				if (!tryFallback) {
-					throw error;
-				}
-				// we were not able to produce correct metadata from the URL, but
-				// in this case we don't care and try to fallback on the saved metadata in the
-				// database.
-				this.logger.error(
-					'SAML initialization detected an invalid metadata URL in database. Trying to initialize from metadata in database if available.',
+				if (!tryFallback) throw error;
 
+				this.logger.error(
+					'SAML initialization detected an invalid metadata URL in database. Trying to fallback to DB metadata.',
 					{ error },
 				);
 			}
 		} else if (prefs.metadata) {
 			const validationResult = await this.validator.validateMetadata(prefs.metadata);
-			if (!validationResult) {
-				throw new InvalidSamlMetadataError();
-			}
+			if (!validationResult) throw new InvalidSamlMetadataError();
 		}
-		// If SAML login is enabled, we need to ensure that we have valid metadata available
-		// if the metadata url is provided and it was possible to fetch and validate that metadata
-		// it is now stored in this._samlPreferences.metadata.
-		// if no metadata url was provided but metadata directly as XML, it is also already stored
-		// in this._samlPreferences.metadata.
+
+		// Ensure metadata exists if login is enabled
 		if (isSamlLoginEnabled()) {
 			if (this._samlPreferences.metadata) {
 				const validationResult = await this.validator.validateMetadata(
 					this._samlPreferences.metadata,
 				);
-				if (!validationResult) {
-					throw new InvalidSamlMetadataError();
-				}
+				if (!validationResult) throw new InvalidSamlMetadataError();
 			} else {
-				// in this case SAML login is enabled but no valid metadata is available
 				throw new InvalidSamlMetadataError();
 			}
 		}
+
 		this.getIdentityProviderInstance(true);
-		const result = await this.saveSamlPreferencesToDb();
-		return result;
+
+		// 🔑 Save per-tenant
+		return await this.saveSamlPreferencesToDb(tenantId);
 	}
 
-	async loadPreferencesWithoutValidation(prefs: Partial<SamlPreferences>) {
+	async loadPreferencesWithoutValidation(prefs: Partial<SamlPreferences>, tenantId?: string) {
 		this._samlPreferences.loginBinding = prefs.loginBinding ?? this._samlPreferences.loginBinding;
 		this._samlPreferences.metadata = prefs.metadata ?? this._samlPreferences.metadata;
 		this._samlPreferences.mapping = prefs.mapping ?? this._samlPreferences.mapping;
@@ -327,7 +319,10 @@ export class SamlService {
 		setSamlLoginLabel(prefs.loginLabel ?? getSamlLoginLabel());
 	}
 
-	async loadFromDbAndApplySamlPreferences(apply = true): Promise<SamlPreferences | undefined> {
+	async loadFromDbAndApplySamlPreferences(
+		apply = true,
+		tenantId?: string,
+	): Promise<SamlPreferences | undefined> {
 		const samlPreferences = await this.settingsRepository.findOne({
 			where: { key: SAML_PREFERENCES_DB_KEY },
 		});
@@ -335,7 +330,7 @@ export class SamlService {
 			const prefs = jsonParse<SamlPreferences>(samlPreferences.value);
 			if (prefs) {
 				if (apply) {
-					await this.setSamlPreferences(prefs, true);
+					await this.setSamlPreferences(prefs, tenantId, true);
 				} else {
 					await this.loadPreferencesWithoutValidation(prefs);
 				}
@@ -345,12 +340,14 @@ export class SamlService {
 		return;
 	}
 
-	async saveSamlPreferencesToDb(): Promise<SamlPreferences | undefined> {
+	async saveSamlPreferencesToDb(tenantId?: string): Promise<SamlPreferences | undefined> {
 		const samlPreferences = await this.settingsRepository.findOne({
-			where: { key: SAML_PREFERENCES_DB_KEY },
+			where: { key: SAML_PREFERENCES_DB_KEY, tenantId },
 		});
+
 		const settingsValue = JSON.stringify(this.samlPreferences);
 		let result: Settings;
+
 		if (samlPreferences) {
 			samlPreferences.value = settingsValue;
 			result = await this.settingsRepository.save(samlPreferences, {
@@ -362,10 +359,12 @@ export class SamlService {
 					key: SAML_PREFERENCES_DB_KEY,
 					value: settingsValue,
 					loadOnStartup: true,
+					tenantId, // 👈tenantId
 				},
 				{ transaction: false },
 			);
 		}
+
 		if (result) return jsonParse<SamlPreferences>(result.value);
 		return;
 	}

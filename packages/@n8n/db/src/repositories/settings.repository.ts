@@ -1,6 +1,5 @@
 import { Service } from '@n8n/di';
-import { DataSource, Repository } from '@n8n/typeorm';
-
+import { DataSource, Repository, IsNull } from '@n8n/typeorm';
 import { Settings } from '../entities';
 
 @Service()
@@ -9,7 +8,42 @@ export class SettingsRepository extends Repository<Settings> {
 		super(Settings, dataSource.manager);
 	}
 
-	async findByKey(key: string): Promise<Settings | null> {
-		return await this.findOneBy({ key });
+	async findByKey(key: string, tenantId?: string, withFallback = true): Promise<Settings | null> {
+		let setting = await this.findOne({
+			where: { key, tenantId },
+		});
+
+		if (!setting && tenantId && withFallback) {
+			// fallback to global setting (tenant_id IS NULL)
+			setting = await this.findOne({
+				where: { key, tenantId: IsNull() },
+			});
+		}
+
+		return setting;
 	}
+
+	// async saveByKey(
+	// 	key: string,
+	// 	value: unknown,
+	// 	tenantId?: string,
+	// 	loadOnStartup = true,
+	// ): Promise<Settings> {
+	// 	const existing = await this.findOne({
+	// 		where: { key, tenantId: tenantId ?? IsNull() },
+	// 	});
+
+	// 	if (existing) {
+	// 		existing.value = JSON.stringify(value);
+	// 		existing.loadOnStartup = loadOnStartup;
+	// 		return await this.save(existing);
+	// 	}
+
+	// 	return await this.save({
+	// 		key,
+	// 		tenantId: tenantId ?? null,
+	// 		value: JSON.stringify(value),
+	// 		loadOnStartup,
+	// 	});
+	// }
 }

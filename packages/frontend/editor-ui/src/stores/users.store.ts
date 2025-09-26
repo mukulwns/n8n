@@ -424,40 +424,40 @@ export const useUsersStore = defineStore(STORES.USERS, () => {
 		}
 	};
 
-	// const usersList = useAsyncState(
-	// 	async (filter?: UsersListFilterDto) =>
-	// 		await usersApi.getUsers(rootStore.restApiContext, filter),
-	// 	{
-	// 		count: 0,
-	// 		items: [],
-	// 	},
-	// 	{ immediate: false, resetOnExecute: false },
-	// );
 	const usersList = useAsyncState(
-		async (filter: UsersListFilterDto = { take: -1, skip: 0 }) => {
-			if (!currentUser.value?.tenantId) {
-				throw new Error('Tenant ID missing for current user');
-			}
-			const filterWithTenant: UsersListFilterDto = {
-				take: filter.take ?? -1, // Default to fetch all
-				skip: filter.skip ?? 0,
-				filter: {
-					...filter.filter,
-					tenantId: currentUser.value.tenantId, // Add tenantId filter
-				},
-				select: filter.select ?? ['id', 'firstName', 'lastName', 'email', 'role'],
-				sortBy: filter.sortBy ?? ['firstName:asc'],
-				expand: filter.expand ?? [],
-				where: filter.where,
-			};
-			return await usersApi.getUsers(rootStore.restApiContext, filterWithTenant);
-		},
+		async (filter?: UsersListFilterDto) =>
+			await usersApi.getUsers(rootStore.restApiContext, filter),
 		{
 			count: 0,
 			items: [],
 		},
 		{ immediate: false, resetOnExecute: false },
 	);
+	// const usersList = useAsyncState(
+	// 	async (filter: UsersListFilterDto = { take: -1, skip: 0 }) => {
+	// 		if (!currentUser.value?.tenantId) {
+	// 			throw new Error('Tenant ID missing for current user');
+	// 		}
+	// 		const filterWithTenant: UsersListFilterDto = {
+	// 			take: filter.take ?? -1, // Default to fetch all
+	// 			skip: filter.skip ?? 0,
+	// 			filter: {
+	// 				...filter.filter,
+	// 				tenantId: currentUser.value.tenantId, // Add tenantId filter
+	// 			},
+	// 			select: filter.select ?? ['id', 'firstName', 'lastName', 'email', 'role'],
+	// 			sortBy: filter.sortBy ?? ['firstName:asc'],
+	// 			expand: filter.expand ?? [],
+	// 			where: filter.where,
+	// 		};
+	// 		return await usersApi.getUsers(rootStore.restApiContext, filterWithTenant);
+	// 	},
+	// 	{
+	// 		count: 0,
+	// 		items: [],
+	// 	},
+	// 	{ immediate: false, resetOnExecute: false },
+	// );
 
 	return {
 		initialized,

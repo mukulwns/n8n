@@ -41,45 +41,44 @@ export class SourceControlController {
 	}
 
 	@Post('/preferences', { middlewares: [sourceControlLicensedMiddleware] })
-@GlobalScope('sourceControl:manage')
-async setPreferences(req: SourceControlRequest.UpdatePreferences) {
-    console.log(req.user, " kjjfkldsjfjkldsjfkldsjf;dsf");
-    if (
-        req.body.branchReadOnly === undefined &&
-        this.sourceControlPreferencesService.isSourceControlConnected()
-    ) {
-        throw new BadRequestError(
-            'Cannot change preferences while connected to a source control provider. Please disconnect first.',
-        );
-    }
-    try {
-        const sanitizedPreferences: Partial<SourceControlPreferences> = {
-            ...req.body,
-            initRepo: req.body.initRepo ?? true, // default to true if not specified
-            connected: undefined,
-            publicKey: undefined,
-            tenantId: req.user.tenantId, // Add tenantId from req.user
-        };
-        await this.sourceControlPreferencesService.validateSourceControlPreferences(
-            sanitizedPreferences,
-        );
-        const updatedPreferences =
-            await this.sourceControlPreferencesService.setPreferences(sanitizedPreferences);
-        const resultingPreferences = this.sourceControlPreferencesService.getPreferences();
-        // #region Tracking Information
-        this.eventService.emit('source-control-settings-updated', {
-            branchName: resultingPreferences.branchName,
-            connected: resultingPreferences.connected,
-            readOnlyInstance: resultingPreferences.branchReadOnly,
-            repoType: getRepoType(resultingPreferences.repositoryUrl),
-            tenantId: resultingPreferences.tenantId, 
-        });
-        // #endregion
-        return resultingPreferences;
-    } catch (error) {
-        throw new BadRequestError((error as { message: string }).message);
-    }
-}
+	@GlobalScope('sourceControl:manage')
+	async setPreferences(req: SourceControlRequest.UpdatePreferences) {
+		if (
+			req.body.branchReadOnly === undefined &&
+			this.sourceControlPreferencesService.isSourceControlConnected()
+		) {
+			throw new BadRequestError(
+				'Cannot change preferences while connected to a source control provider. Please disconnect first.',
+			);
+		}
+		try {
+			const sanitizedPreferences: Partial<SourceControlPreferences> = {
+				...req.body,
+				initRepo: req.body.initRepo ?? true, // default to true if not specified
+				connected: undefined,
+				publicKey: undefined,
+				tenantId: req.user.tenantId, // Add tenantId from req.user
+			};
+			await this.sourceControlPreferencesService.validateSourceControlPreferences(
+				sanitizedPreferences,
+			);
+			const updatedPreferences =
+				await this.sourceControlPreferencesService.setPreferences(sanitizedPreferences);
+			const resultingPreferences = this.sourceControlPreferencesService.getPreferences();
+			// #region Tracking Information
+			this.eventService.emit('source-control-settings-updated', {
+				branchName: resultingPreferences.branchName,
+				connected: resultingPreferences.connected,
+				readOnlyInstance: resultingPreferences.branchReadOnly,
+				repoType: getRepoType(resultingPreferences.repositoryUrl),
+				tenantId: resultingPreferences.tenantId,
+			});
+			// #endregion
+			return resultingPreferences;
+		} catch (error) {
+			throw new BadRequestError((error as { message: string }).message);
+		}
+	}
 
 	@Patch('/preferences', { middlewares: [sourceControlLicensedMiddleware] })
 	@GlobalScope('sourceControl:manage')

@@ -62,7 +62,8 @@ export class SamlController {
 	@Post('/config', { middlewares: [samlLicensedMiddleware] })
 	@GlobalScope('saml:manage')
 	async configPost(_req: AuthenticatedRequest, _res: Response, @Body payload: SamlPreferences) {
-		return await this.samlService.setSamlPreferences(payload);
+		const tenantId = _req.user?.tenantId;
+		return await this.samlService.setSamlPreferences(payload, tenantId);
 	}
 
 	/**
@@ -75,7 +76,8 @@ export class SamlController {
 		res: Response,
 		@Body { loginEnabled }: SamlToggleDto,
 	) {
-		await this.samlService.setSamlPreferences({ loginEnabled });
+		const tenantId = _req.user?.tenantId;
+		await this.samlService.setSamlPreferences({ loginEnabled }, tenantId);
 		return res.sendStatus(200);
 	}
 

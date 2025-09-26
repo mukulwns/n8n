@@ -84,7 +84,7 @@ const {
 				<SSOLogin v-if="withSso" />
 
 				<!-- 👇 Only one dynamic button -->
-				<div>
+				<div class="buttonContainer" :class="$style.ssoLogin">
 					<N8nButton
 						size="large"
 						type="primary"
@@ -105,6 +105,10 @@ body {
 	background-color: var(--color-background-light);
 }
 
+.ssoLogin {
+	text-align: center;
+}
+
 .container {
 	display: flex;
 	align-items: center;
@@ -122,5 +126,11 @@ body {
 
 .formContainer {
 	padding-bottom: var(--spacing-xl);
+}
+
+.buttonContainer {
+	display: flex;
+	justify-content: center;
+	margin-top: 20px !important;
 }
 </style>

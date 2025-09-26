@@ -38,9 +38,11 @@ export class InsightsController {
 		_res: Response,
 		@Query payload: InsightsDateFilterDto = { dateRange: 'week' },
 	): Promise<InsightsSummary> {
+		const tenantId: string = _req.user?.tenantId;
 		const dateRangeAndMaxAgeInDays = this.getMaxAgeInDaysAndGranularity(payload);
 		return await this.insightsService.getInsightsSummary({
 			periodLengthInDays: dateRangeAndMaxAgeInDays.maxAgeInDays,
+			tenantId,
 		});
 	}
 
@@ -52,6 +54,7 @@ export class InsightsController {
 		_res: Response,
 		@Query payload: ListInsightsWorkflowQueryDto,
 	): Promise<InsightsByWorkflow> {
+		const tenantId = _req.user?.tenantId;
 		const dateRangeAndMaxAgeInDays = this.getMaxAgeInDaysAndGranularity({
 			dateRange: payload.dateRange ?? 'week',
 		});
@@ -60,6 +63,7 @@ export class InsightsController {
 			skip: payload.skip,
 			take: payload.take,
 			sortBy: payload.sortBy,
+			tenantId,
 		});
 	}
 
@@ -71,6 +75,7 @@ export class InsightsController {
 		_res: Response,
 		@Query payload: InsightsDateFilterDto,
 	): Promise<InsightsByTime[]> {
+		const tenantId: string = _req.user?.tenantId;
 		const dateRangeAndMaxAgeInDays = this.getMaxAgeInDaysAndGranularity(payload);
 
 		// Cast to full insights by time type
@@ -78,6 +83,7 @@ export class InsightsController {
 		return (await this.insightsService.getInsightsByTime({
 			maxAgeInDays: dateRangeAndMaxAgeInDays.maxAgeInDays,
 			periodUnit: dateRangeAndMaxAgeInDays.granularity,
+			tenantId: tenantId,
 		})) as InsightsByTime[];
 	}
 
@@ -93,13 +99,14 @@ export class InsightsController {
 		@Query payload: InsightsDateFilterDto,
 	): Promise<RestrictedInsightsByTime[]> {
 		const dateRangeAndMaxAgeInDays = this.getMaxAgeInDaysAndGranularity(payload);
-
+		const tenantId: string = _req.user?.tenantId;
 		// Cast to restricted insights by time type
 		// as the service returns only time saved data
 		return (await this.insightsService.getInsightsByTime({
 			maxAgeInDays: dateRangeAndMaxAgeInDays.maxAgeInDays,
 			periodUnit: dateRangeAndMaxAgeInDays.granularity,
 			insightTypes: ['time_saved_min'],
+			tenantId: tenantId,
 		})) as RestrictedInsightsByTime[];
 	}
 }

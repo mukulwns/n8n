@@ -581,6 +581,7 @@ const tags = computed(
 	:global(.n8n-badge) {
 		padding-right: 0;
 	}
+
 	:global(.n8n-breadcrumbs) {
 		padding-left: var(--spacing-5xs);
 	}

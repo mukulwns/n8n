@@ -490,7 +490,7 @@ export class License implements LicenseProvider {
 		private readonly instanceSettings: InstanceSettings,
 		private readonly settingsRepository: SettingsRepository,
 		private readonly licenseMetricsService: LicenseMetricsService,
-	) { }
+	) {}
 
 	async init(): Promise<void> {
 		this.logger.debug('License init bypassed for SaaS');
@@ -512,7 +512,7 @@ export class License implements LicenseProvider {
 		return {
 			id: 'saas-unlimited-entitlement',
 			productId: 'saas-unlimited',
-			name: 'SaaS Unlimited',
+			name: 'SaaS Unlimited', // Now 'name' is valid
 			productMetadata: { name: 'SaaS Unlimited' },
 			features: {},
 			featureOverrides: {},

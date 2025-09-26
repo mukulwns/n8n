@@ -4,7 +4,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { createEventBus } from '@n8n/utils/event-bus';
 import Modal from './Modal.vue';
 import {
-	EnterpriseEditionFeature,
 	MODAL_CONFIRM,
 	PLACEHOLDER_EMPTY_WORKFLOW_ID,
 	WORKFLOW_SHARE_MODAL_KEY,
@@ -24,7 +23,6 @@ import { useProjectsStore } from '@/stores/projects.store';
 import type { ProjectSharingData, Project } from '@/types/projects.types';
 import { ProjectTypes } from '@/types/projects.types';
 import { useRolesStore } from '@/stores/roles.store';
-import { usePageRedirectionHelper } from '@/composables/usePageRedirectionHelper';
 import { useI18n } from '@n8n/i18n';
 import { telemetry } from '@/plugins/telemetry';
 import { useWorkflowSaving } from '@/composables/useWorkflowSaving';
@@ -48,7 +46,6 @@ const rolesStore = useRolesStore();
 
 const toast = useToast();
 const message = useMessage();
-const pageRedirectionHelper = usePageRedirectionHelper();
 const i18n = useI18n();
 const router = useRouter();
 const route = useRoute();
@@ -67,9 +64,8 @@ const sharedWithProjects = ref([
 ] as ProjectSharingData[]);
 const teamProject = ref(null as Project | null);
 
-const isSharingEnabled = computed(
-	() => settingsStore.isEnterpriseFeatureEnabled[EnterpriseEditionFeature.Sharing],
-);
+// ✅ Force-enable sharing in Community version
+const isSharingEnabled = computed(() => true);
 
 const isHomeTeamProject = computed(() => workflow.value.homeProject?.type === ProjectTypes.Team);
 
@@ -79,15 +75,9 @@ const modalTitle = computed(() => {
 			interpolate: { projectName: workflow.value.homeProject?.name ?? '' },
 		});
 	}
-
-	return i18n.baseText(
-		isSharingEnabled.value
-			? (uiStore.contextBasedTranslationKeys.workflows.sharing.title as BaseTextKey)
-			: (uiStore.contextBasedTranslationKeys.workflows.sharing.unavailable.title as BaseTextKey),
-		{
-			interpolate: { name: workflow.value.name },
-		},
-	);
+	return i18n.baseText(uiStore.contextBasedTranslationKeys.workflows.sharing.title as BaseTextKey, {
+		interpolate: { name: workflow.value.name },
+	});
 });
 
 const workflowPermissions = computed(() => getResourcePermissions(workflow.value?.scopes).workflow);
@@ -97,7 +87,7 @@ const workflowOwnerName = computed(() =>
 );
 
 const projects = computed(() =>
-	projectsStore.personalProjects.filter((project) => project.id !== workflow.value.homeProject?.id),
+	projectsStore.personalProjects.filter((p) => p.id !== workflow.value.homeProject?.id),
 );
 
 const numberOfMembersInHomeTeamProject = computed(() => teamProject.value?.relations.length ?? 0);
@@ -138,10 +128,7 @@ const onProjectRemoved = (project: ProjectSharingData) => {
 };
 
 const onSave = async () => {
-	if (loading.value) {
-		return;
-	}
-
+	if (loading.value) return;
 	loading.value = true;
 
 	const saveWorkflowPromise = async () => {
@@ -152,9 +139,8 @@ const onSave = async () => {
 				throw new Error(i18n.baseText('workflows.shareModal.onSave.error.title'));
 			}
 			return workflowId;
-		} else {
-			return workflow.value.id;
 		}
+		return workflow.value.id;
 	};
 
 	try {
@@ -163,10 +149,7 @@ const onSave = async () => {
 			workflowId,
 			sharedWithProjects: sharedWithProjects.value,
 		});
-
-		toast.showMessage({
-			title: i18n.baseText('workflows.shareModal.onSave.success.title'),
-		});
+		toast.showMessage({ title: i18n.baseText('workflows.shareModal.onSave.success.title') });
 		isDirty.value = false;
 	} catch (error) {
 		toast.showError(error, i18n.baseText('workflows.shareModal.onSave.error.title'));
@@ -187,32 +170,19 @@ const onCloseModal = async () => {
 				cancelButtonText: i18n.baseText('workflows.shareModal.saveBeforeClose.cancelButtonText'),
 			},
 		);
-
-		if (shouldSave === MODAL_CONFIRM) {
-			return await onSave();
-		}
+		if (shouldSave === MODAL_CONFIRM) return await onSave();
 	}
-
 	return true;
 };
 
-const goToUpgrade = () => {
-	void pageRedirectionHelper.goToUpgrade('workflow_sharing', 'upgrade-workflow-sharing');
-};
-
 const initialize = async () => {
-	if (isSharingEnabled.value) {
-		await Promise.all([usersStore.fetchUsers(), projectsStore.getAllProjects()]);
-
-		if (workflow.value.id !== PLACEHOLDER_EMPTY_WORKFLOW_ID) {
-			await workflowsStore.fetchWorkflow(workflow.value.id);
-		}
-
-		if (isHomeTeamProject.value && workflow.value.homeProject) {
-			teamProject.value = await projectsStore.fetchProject(workflow.value.homeProject.id);
-		}
+	await Promise.all([usersStore.fetchUsers(), projectsStore.getAllProjects()]);
+	if (workflow.value.id !== PLACEHOLDER_EMPTY_WORKFLOW_ID) {
+		await workflowsStore.fetchWorkflow(workflow.value.id);
 	}
-
+	if (isHomeTeamProject.value && workflow.value.homeProject) {
+		teamProject.value = await projectsStore.fetchProject(workflow.value.homeProject.id);
+	}
 	loading.value = false;
 };
 
@@ -230,86 +200,79 @@ watch(
 </script>
 
 <template>
-	<Modal width="460px" max-height="75%" :title="modalTitle" :event-bus="modalBus" :name="WORKFLOW_SHARE_MODAL_KEY"
-		:center="true" :before-close="onCloseModal">
+	<Modal
+		width="460px"
+		max-height="75%"
+		:title="modalTitle"
+		:event-bus="modalBus"
+		:name="WORKFLOW_SHARE_MODAL_KEY"
+		:center="true"
+		:before-close="onCloseModal"
+	>
 		<template #content>
-			<div v-if="!isSharingEnabled" :class="$style.container">
-				<n8n-text>
-					{{
-						i18n.baseText(
-							uiStore.contextBasedTranslationKeys.workflows.sharing.unavailable.description.modal,
-						)
-					}}
-				</n8n-text>
-			</div>
-			<div v-else :class="$style.container">
-				<n8n-info-tip v-if="!workflowPermissions.share && !isHomeTeamProject" :bold="false" class="mb-s">
+			<div :class="$style.container">
+				<n8n-info-tip
+					v-if="!workflowPermissions.share && !isHomeTeamProject"
+					:bold="false"
+					class="mb-s"
+				>
 					{{
 						i18n.baseText('workflows.shareModal.info.sharee', {
 							interpolate: { workflowOwnerName },
 						})
 					}}
 				</n8n-info-tip>
-				<enterprise-edition :features="[EnterpriseEditionFeature.Sharing]" :class="$style.content">
-					<div>
-						<ProjectSharing v-model="sharedWithProjects" :home-project="workflow.homeProject" :projects="projects"
-							:roles="workflowRoles" :readonly="workflowPermissions.share"
-							:static="isHomeTeamProject || workflowPermissions.share"
-							:placeholder="i18n.baseText('workflows.shareModal.select.placeholder')" @project-added="onProjectAdded"
-							@project-removed="onProjectRemoved" />
-						<n8n-info-tip v-if="isHomeTeamProject" :bold="false" class="mt-s">
-							<I18nT keypath="workflows.shareModal.info.members" tag="span" scope="global">
-								<template #projectName>
-									{{ workflow.homeProject?.name }}
-								</template>
-								<template #members>
-									<strong>
-										{{
-											i18n.baseText('workflows.shareModal.info.members.number', {
-												interpolate: {
-													number: String(numberOfMembersInHomeTeamProject),
-												},
-												adjustToNumber: numberOfMembersInHomeTeamProject,
-											})
-										}}
-									</strong>
-								</template>
-							</I18nT>
-						</n8n-info-tip>
-					</div>
-					<template #fallback>
-						<n8n-text>
-							<I18nT :keypath="uiStore.contextBasedTranslationKeys.workflows.sharing.unavailable.description
-								.tooltip
-								" tag="span" scope="global">
-								<template #action />
-							</I18nT>
-						</n8n-text>
-					</template>
-				</enterprise-edition>
+
+				<div :class="$style.content">
+					<ProjectSharing
+						v-model="sharedWithProjects"
+						:home-project="workflow.homeProject"
+						:projects="projects"
+						:roles="workflowRoles"
+						:readonly="workflowPermissions.share"
+						:static="isHomeTeamProject || workflowPermissions.share"
+						:placeholder="i18n.baseText('workflows.shareModal.select.placeholder')"
+						@project-added="onProjectAdded"
+						@project-removed="onProjectRemoved"
+					/>
+					<n8n-info-tip v-if="isHomeTeamProject" :bold="false" class="mt-s">
+						<I18nT keypath="workflows.shareModal.info.members" tag="span" scope="global">
+							<template #projectName>{{ workflow.homeProject?.name }}</template>
+							<template #members>
+								<strong>
+									{{
+										i18n.baseText('workflows.shareModal.info.members.number', {
+											interpolate: { number: String(numberOfMembersInHomeTeamProject) },
+											adjustToNumber: numberOfMembersInHomeTeamProject,
+										})
+									}}
+								</strong>
+							</template>
+						</I18nT>
+					</n8n-info-tip>
+				</div>
 			</div>
 		</template>
 
 		<template #footer>
-			<div v-if="!isSharingEnabled" :class="$style.actionButtons">
-				<n8n-button @click="goToUpgrade">
-					{{
-						i18n.baseText(uiStore.contextBasedTranslationKeys.workflows.sharing.unavailable.button)
-					}}
-				</n8n-button>
-			</div>
-			<enterprise-edition v-else :features="[EnterpriseEditionFeature.Sharing]" :class="$style.actionButtons">
+			<div :class="$style.actionButtons">
 				<n8n-text v-show="isDirty" color="text-light" size="small" class="mr-xs">
 					{{ i18n.baseText('workflows.shareModal.changesHint') }}
 				</n8n-text>
 				<n8n-button v-if="isHomeTeamProject" type="secondary" @click="modalBus.emit('close')">
 					{{ i18n.baseText('generic.close') }}
 				</n8n-button>
-				<n8n-button v-else v-show="workflowPermissions.share" :loading="loading" :disabled="!isDirty"
-					data-test-id="workflow-sharing-modal-save-button" @click="onSave">
+				<n8n-button
+					v-else
+					v-show="workflowPermissions.share"
+					:loading="loading"
+					:disabled="!isDirty"
+					data-test-id="workflow-sharing-modal-save-button"
+					@click="onSave"
+				>
 					{{ i18n.baseText('workflows.shareModal.save') }}
 				</n8n-button>
-			</enterprise-edition>
+			</div>
 		</template>
 	</Modal>
 </template>
@@ -321,7 +284,7 @@ watch(
 	height: 100%;
 }
 
-.container>* {
+.container > * {
 	overflow-wrap: break-word;
 }
 
@@ -332,22 +295,9 @@ watch(
 	overflow-y: auto;
 }
 
-.usersList {
-	height: 100%;
-	overflow-y: auto;
-}
-
 .actionButtons {
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
-}
-
-.roleSelect {
-	max-width: 100px;
-}
-
-.roleSelectRemoveOption {
-	border-top: 1px solid var(--color-foreground-base);
 }
 </style>

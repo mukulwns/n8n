@@ -13,6 +13,7 @@ export class CredentialsRepository extends Repository<CredentialsEntity> {
 	}
 
 	async findStartingWith(name: string, tenantId?: string) {
+		console.log('*******************************');
 		return await this.find({
 			select: ['name'],
 			where: {

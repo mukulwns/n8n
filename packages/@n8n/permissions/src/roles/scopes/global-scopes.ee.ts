@@ -78,11 +78,12 @@ export const GLOBAL_OWNER_SCOPES: Scope[] = [
 	'project:delete',
 	'insights:list',
 	'folder:move',
+	'folder:read',
+	'folder:update',
+	'folder:delete',
+	'folder:create',
+	'folder:list',
 	'oidc:manage',
-	'tenant:list', // tenant end points
-	'tenant:read',
-	'tenant:update',
-	'tenant:delete',
 ];
 
 export const GLOBAL_ADMIN_SCOPES = GLOBAL_OWNER_SCOPES.concat();
@@ -98,15 +99,8 @@ export const GLOBAL_MEMBER_SCOPES: Scope[] = [
 	'tag:create',
 	'tag:read',
 	'tag:update',
-	'tag:delete', // added
 	'tag:list',
 	'user:list',
 	'variable:list',
 	'variable:read',
-	'variable:update', // added
-	'variable:delete', // added
-	'workflow:create', // added
-	'workflow:read', // added
-	'workflow:update', // added
-	'workflow:list', // added
 ];

@@ -84,7 +84,7 @@ const onProjectSelected = (projectId: string) => {
 };
 
 const onRoleAction = (project: ProjectSharingData, role: string) => {
-	if (!Array.isArray(model.value) || props.readonly) {
+	if (!Array.isArray(model.value)) {
 		return;
 	}
 
@@ -158,7 +158,6 @@ watch(
 					v-if="props.roles?.length"
 					:class="$style.projectRoleSelect"
 					:model-value="props.roles[0]"
-					:disabled="props.readonly"
 					size="small"
 					@update:model-value="onRoleAction(project, $event)"
 				>
@@ -169,7 +168,6 @@ watch(
 					native-type="button"
 					square
 					icon="trash-2"
-					:disabled="props.readonly"
 					data-test-id="project-sharing-remove"
 					@click="onRoleAction(project, 'remove')"
 				/>

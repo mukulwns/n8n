@@ -39,7 +39,11 @@ export class ApiKeysController {
 
 		const newApiKey = await this.publicApiKeyService.createPublicApiKeyForUser(req.user, body);
 
-		this.eventService.emit('public-api-key-created', { user: req.user, publicApi: false });
+		this.eventService.emit('public-api-key-created', {
+			user: req.user,
+			publicApi: false,
+			tenantId: req.user.tenantId,
+		});
 
 		return {
 			...newApiKey,
@@ -65,7 +69,11 @@ export class ApiKeysController {
 	async deleteApiKey(req: AuthenticatedRequest, _res: Response, @Param('id') apiKeyId: string) {
 		await this.publicApiKeyService.deleteApiKeyForUser(req.user, apiKeyId);
 
-		this.eventService.emit('public-api-key-deleted', { user: req.user, publicApi: false });
+		this.eventService.emit('public-api-key-deleted', {
+			user: req.user,
+			publicApi: false,
+			tenantId: req.user.tenantId,
+		});
 
 		return { success: true };
 	}

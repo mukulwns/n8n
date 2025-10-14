@@ -76,11 +76,12 @@ export class LogStreamingEventRelay extends EventRelay {
 	// #region Workflow
 
 	@Redactable()
-	private workflowCreated({ user, workflow }: RelayEventMap['workflow-created']) {
+	private workflowCreated({ user, workflow, tenantId }: RelayEventMap['workflow-created']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.workflow.created',
 			payload: {
 				...user,
+				tenantId: tenantId ?? workflow.tenantId,
 				workflowId: workflow.id,
 				workflowName: workflow.name,
 			},
@@ -88,35 +89,48 @@ export class LogStreamingEventRelay extends EventRelay {
 	}
 
 	@Redactable()
-	private workflowDeleted({ user, workflowId }: RelayEventMap['workflow-deleted']) {
+	private workflowDeleted({ user, workflowId, tenantId }: RelayEventMap['workflow-deleted']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.workflow.deleted',
-			payload: { ...user, workflowId },
+			payload: {
+				...user,
+				tenantId: tenantId,
+				workflowId,
+			},
 		});
 	}
 
 	@Redactable()
-	private workflowArchived({ user, workflowId }: RelayEventMap['workflow-archived']) {
+	private workflowArchived({ user, workflowId, tenantId }: RelayEventMap['workflow-archived']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.workflow.archived',
-			payload: { ...user, workflowId },
+			payload: {
+				...user,
+				tenantId: tenantId,
+				workflowId,
+			},
 		});
 	}
 
 	@Redactable()
-	private workflowUnarchived({ user, workflowId }: RelayEventMap['workflow-unarchived']) {
+	private workflowUnarchived({ user, workflowId, tenantId }: RelayEventMap['workflow-unarchived']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.workflow.unarchived',
-			payload: { ...user, workflowId },
+			payload: {
+				...user,
+				workflowId,
+				tenantId: tenantId,
+			},
 		});
 	}
 
 	@Redactable()
-	private workflowSaved({ user, workflow }: RelayEventMap['workflow-saved']) {
+	private workflowSaved({ user, workflow, tenantId }: RelayEventMap['workflow-saved']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.workflow.updated',
 			payload: {
 				...user,
+				tenantId: tenantId ?? workflow.tenantId,
 				workflowId: workflow.id,
 				workflowName: workflow.name,
 			},
@@ -148,7 +162,7 @@ export class LogStreamingEventRelay extends EventRelay {
 	}
 
 	private workflowPostExecute(event: RelayEventMap['workflow-post-execute']) {
-		const { runData, workflow, executionId, ...rest } = event;
+		const { runData, workflow, executionId, tenantId, ...rest } = event;
 
 		const payload = {
 			...rest,
@@ -157,6 +171,7 @@ export class LogStreamingEventRelay extends EventRelay {
 			isManual: runData?.mode === 'manual',
 			workflowId: workflow.id,
 			workflowName: workflow.name,
+			tenantId: tenantId ?? workflow.tenantId,
 		};
 
 		if (payload.success) {
@@ -255,18 +270,18 @@ export class LogStreamingEventRelay extends EventRelay {
 	// #region User
 
 	@Redactable()
-	private userDeleted({ user }: RelayEventMap['user-deleted']) {
+	private userDeleted({ user, tenantId }: RelayEventMap['user-deleted']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.user.deleted',
-			payload: user,
+			payload: { ...user, tenantId },
 		});
 	}
 
 	@Redactable()
-	private userInvited({ user, targetUserId }: RelayEventMap['user-invited']) {
+	private userInvited({ user, targetUserId, tenantId }: RelayEventMap['user-invited']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.user.invited',
-			payload: { ...user, targetUserId },
+			payload: { ...user, targetUserId, tenantId },
 		});
 	}
 
@@ -279,10 +294,10 @@ export class LogStreamingEventRelay extends EventRelay {
 	}
 
 	@Redactable()
-	private userUpdated({ user, fieldsChanged }: RelayEventMap['user-updated']) {
+	private userUpdated({ user, fieldsChanged, tenantId }: RelayEventMap['user-updated']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.user.updated',
-			payload: { ...user, fieldsChanged },
+			payload: { ...user, fieldsChanged, tenantId },
 		});
 	}
 
@@ -291,10 +306,13 @@ export class LogStreamingEventRelay extends EventRelay {
 	// #region Auth
 
 	@Redactable()
-	private userSignedUp({ user }: RelayEventMap['user-signed-up']) {
+	private userSignedUp({ user, tenantId }: RelayEventMap['user-signed-up']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.user.signedup',
-			payload: user,
+			payload: {
+				user,
+				tenantId: tenantId,
+			},
 		});
 	}
 
@@ -329,10 +347,13 @@ export class LogStreamingEventRelay extends EventRelay {
 	}
 
 	@Redactable()
-	private userPasswordResetEmailClick({ user }: RelayEventMap['user-password-reset-email-click']) {
+	private userPasswordResetEmailClick({
+		user,
+		tenantId,
+	}: RelayEventMap['user-password-reset-email-click']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.user.reset',
-			payload: user,
+			payload: { ...user, tenantId },
 		});
 	}
 
@@ -351,18 +372,18 @@ export class LogStreamingEventRelay extends EventRelay {
 	// #region Public API
 
 	@Redactable()
-	private publicApiKeyCreated({ user }: RelayEventMap['public-api-key-created']) {
+	private publicApiKeyCreated({ user, tenantId }: RelayEventMap['public-api-key-created']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.user.api.created',
-			payload: user,
+			payload: { ...user, tenantId },
 		});
 	}
 
 	@Redactable()
-	private publicApiKeyDeleted({ user }: RelayEventMap['public-api-key-deleted']) {
+	private publicApiKeyDeleted({ user, tenantId }: RelayEventMap['public-api-key-deleted']) {
 		void this.eventBus.sendAuditEvent({
 			eventName: 'n8n.audit.user.api.deleted',
-			payload: user,
+			payload: { ...user, tenantId },
 		});
 	}
 

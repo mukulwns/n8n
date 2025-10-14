@@ -169,6 +169,7 @@ export class UserService {
 						publicApi: false,
 						emailSent: result.emailSent,
 						inviteeRole: role, // same role for all invited users
+						tenantId: owner.tenantId,
 					});
 				} catch (e) {
 					if (e instanceof Error) {
@@ -176,6 +177,7 @@ export class UserService {
 							user: owner,
 							messageType: 'New user invite',
 							publicApi: false,
+							// tenantId: owner.tenantId,
 						});
 						this.logger.error('Failed to send email', {
 							userId: owner.id,

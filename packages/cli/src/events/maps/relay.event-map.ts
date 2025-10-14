@@ -19,7 +19,11 @@ export type UserLike = {
 	lastName?: string;
 	role: string;
 };
-
+export type TenantLike = {
+	id: string;
+	name: string;
+	domain?: string | null;
+};
 export type RelayEventMap = {
 	// #region Lifecycle
 
@@ -36,7 +40,7 @@ export type RelayEventMap = {
 	};
 	'tenant-owner-setup': {
 		userId: string;
-		tenantId: string;
+		tenantId?: string;
 	};
 	'first-production-workflow-succeeded': {
 		projectId: string;
@@ -63,35 +67,41 @@ export type RelayEventMap = {
 		publicApi: boolean;
 		projectId: string;
 		projectType: string;
+		tenantId?: string;
 	};
 
 	'workflow-deleted': {
 		user: UserLike;
 		workflowId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'workflow-archived': {
 		user: UserLike;
 		workflowId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'workflow-unarchived': {
 		user: UserLike;
 		workflowId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'workflow-saved': {
 		user: UserLike;
 		workflow: IWorkflowDb;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'workflow-pre-execute': {
 		executionId: string;
 		data: IWorkflowExecutionDataProcess /* main process */ | IWorkflowBase /* worker */;
+		tenantId?: string;
 	};
 
 	'workflow-post-execute': {
@@ -99,12 +109,14 @@ export type RelayEventMap = {
 		userId?: string;
 		workflow: IWorkflowBase;
 		runData?: IRun;
+		tenantId?: string;
 	};
 
 	'workflow-sharing-updated': {
 		workflowId: string;
 		userIdSharer: string;
 		userIdList: string[];
+		tenantId?: string;
 	};
 
 	// #endregion
@@ -117,6 +129,7 @@ export type RelayEventMap = {
 		nodeId?: string;
 		nodeName: string;
 		nodeType?: string;
+		tenantId?: string;
 	};
 
 	'node-post-execute': {
@@ -125,6 +138,7 @@ export type RelayEventMap = {
 		nodeId?: string;
 		nodeName: string;
 		nodeType?: string;
+		tenantId?: string;
 	};
 
 	// #endregion
@@ -143,6 +157,7 @@ export type RelayEventMap = {
 		migrationStrategy?: 'transfer_data' | 'delete_data';
 		targetUserId?: string;
 		migrationUserId?: string;
+		tenantId?: string;
 	};
 
 	'user-invited': {
@@ -151,33 +166,39 @@ export type RelayEventMap = {
 		publicApi: boolean;
 		emailSent: boolean;
 		inviteeRole: string;
+		tenantId?: string;
 	};
 
 	'user-reinvited': {
 		user: UserLike;
 		targetUserId: string[];
+		tenantId?: string;
 	};
 
 	'user-updated': {
 		user: UserLike;
 		fieldsChanged: string[];
+		tenantId?: string;
 	};
 
 	'user-signed-up': {
 		user: UserLike;
 		userType: AuthProviderType;
 		wasDisabledLdapUser: boolean;
+		tenantId?: string;
 	};
 
 	'user-logged-in': {
 		user: UserLike;
 		authenticationMethod: AuthenticationMethod;
+		tenantId?: string;
 	};
 
 	'user-login-failed': {
 		userEmail: string;
 		authenticationMethod: AuthenticationMethod;
 		reason?: string;
+		tenantId?: string;
 	};
 
 	'user-changed-role': {
@@ -185,36 +206,43 @@ export type RelayEventMap = {
 		targetUserId: string;
 		publicApi: boolean;
 		targetUserNewRole: string;
+		tenantId?: string;
 	};
 
 	'user-retrieved-user': {
 		userId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'user-retrieved-all-users': {
 		userId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'user-retrieved-execution': {
 		userId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'user-retrieved-all-executions': {
 		userId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'user-retrieved-workflow': {
 		userId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	'user-retrieved-all-workflows': {
 		userId: string;
 		publicApi: boolean;
+		tenantId?: string;
 	};
 
 	// #endregion
@@ -224,14 +252,17 @@ export type RelayEventMap = {
 	'user-invite-email-click': {
 		inviter: UserLike;
 		invitee: UserLike;
+		tenant?: TenantLike;
 	};
 
 	'user-password-reset-email-click': {
 		user: UserLike;
+		tenantId?: string;
 	};
 
 	'user-password-reset-request-click': {
 		user: UserLike;
+		tenantId?: string;
 	};
 
 	'user-transactional-email-sent': {
@@ -253,11 +284,13 @@ export type RelayEventMap = {
 	'public-api-key-created': {
 		user: UserLike;
 		publicApi: boolean;
+		tenantId: string;
 	};
 
 	'public-api-key-deleted': {
 		user: UserLike;
 		publicApi: boolean;
+		tenantId: string;
 	};
 
 	'public-api-invoked': {
@@ -281,6 +314,7 @@ export type RelayEventMap = {
 			| 'Credentials shared'
 			| 'Project shared';
 		publicApi: boolean;
+		// tenantId: string;
 	};
 
 	// #endregion
@@ -304,18 +338,21 @@ export type RelayEventMap = {
 		userIdSharer: string;
 		userIdsShareesAdded: string[];
 		shareesRemoved: number | null;
+		tenantId: string;
 	};
 
 	'credentials-updated': {
 		user: UserLike;
 		credentialType: string;
 		credentialId: string;
+		tenantId: string;
 	};
 
 	'credentials-deleted': {
 		user: UserLike;
 		credentialType: string;
 		credentialId: string;
+		tenantId: string;
 	};
 
 	// #endregion
@@ -332,6 +369,7 @@ export type RelayEventMap = {
 		packageAuthor?: string;
 		packageAuthorEmail?: string;
 		failureReason?: string;
+		tenantId?: string;
 	};
 
 	'community-package-updated': {
@@ -342,6 +380,7 @@ export type RelayEventMap = {
 		packageNodeNames: string[];
 		packageAuthor?: string;
 		packageAuthorEmail?: string;
+		tenantId?: string;
 	};
 
 	'community-package-deleted': {
@@ -351,6 +390,7 @@ export type RelayEventMap = {
 		packageNodeNames: string[];
 		packageAuthor?: string;
 		packageAuthorEmail?: string;
+		tenantId?: string;
 	};
 
 	// #endregion

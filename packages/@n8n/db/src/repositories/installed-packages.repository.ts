@@ -15,7 +15,7 @@ export class InstalledPackagesRepository extends Repository<InstalledPackages> {
 	}
 
 	async saveInstalledPackageWithNodes(packageLoader: PackageDirectoryLoader) {
-		const { packageJson, nodeTypes, loadedNodes } = packageLoader;
+		const { packageJson, nodeTypes, loadedNodes, tenantId } = packageLoader;
 		const { name: packageName, version: installedVersion, author } = packageJson;
 
 		let installedPackage: InstalledPackages;
@@ -27,6 +27,7 @@ export class InstalledPackagesRepository extends Repository<InstalledPackages> {
 					installedVersion,
 					authorName: author?.name,
 					authorEmail: author?.email,
+					tenantId, // ✅ Save tenantId here
 				}),
 			);
 
@@ -38,6 +39,7 @@ export class InstalledPackagesRepository extends Repository<InstalledPackages> {
 					type: `${packageName}.${loadedNode.name}`,
 					latestVersion: loadedNode.version,
 					package: { packageName },
+					tenantId, // ✅ Also save tenantId on InstalledNode
 				});
 
 				installedPackage.installedNodes.push(installedNode);

@@ -282,7 +282,7 @@ export class UsersController {
 		const ownedCredentials = ownedSharedCredentials.map(({ credentials }) => credentials);
 
 		for (const { workflowId } of ownedSharedWorkflows) {
-			await this.workflowService.delete(userToDelete, workflowId, true);
+			await this.workflowService.delete(userToDelete, workflowId, true, tenantId);
 		}
 
 		for (const credential of ownedCredentials) {
@@ -302,6 +302,7 @@ export class UsersController {
 			targetUserId: idToDelete,
 			migrationStrategy: transferId ? 'transfer_data' : 'delete_data',
 			migrationUserId: transfereeId,
+			tenantId: req.user.tenantId,
 		});
 
 		await this.externalHooks.run('user.deleted', [await this.userService.toPublic(userToDelete)]);

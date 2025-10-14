@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from '@n8n/typeorm';
-
 import { InstalledPackages } from './installed-packages';
+import { Tenant } from './tenant';
 
 @Entity()
 export class InstalledNodes {
@@ -13,7 +13,27 @@ export class InstalledNodes {
 	@Column()
 	latestVersion: number;
 
-	@ManyToOne('InstalledPackages', 'installedNodes')
+	@ManyToOne(
+		() => InstalledPackages,
+		(pkg) => pkg.installedNodes,
+		{
+			onDelete: 'CASCADE',
+		},
+	)
 	@JoinColumn({ name: 'package', referencedColumnName: 'packageName' })
 	package: InstalledPackages;
+
+	// 👇 Add tenant relation
+	@Column({ name: 'tenant_id', type: 'uuid', nullable: true })
+	tenantId: string | null;
+
+	@ManyToOne(
+		() => Tenant,
+		(tenant) => tenant.installedNodes,
+		{
+			onDelete: 'CASCADE',
+		},
+	)
+	@JoinColumn({ name: 'tenant_id' })
+	tenant: Tenant;
 }

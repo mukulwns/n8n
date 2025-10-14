@@ -116,7 +116,7 @@ export class Reset extends BaseCommand<z.infer<typeof flagsSchema>> {
 		const ownedCredentials = ownedSharedCredentials.map(({ credentials }) => credentials);
 
 		for (const { workflowId } of ownedSharedWorkflows) {
-			await Container.get(WorkflowService).delete(owner, workflowId, true);
+			await Container.get(WorkflowService).delete(owner, workflowId, true, owner.tenantId);
 		}
 
 		for (const credential of ownedCredentials) {

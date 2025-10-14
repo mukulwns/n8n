@@ -4,8 +4,10 @@ import { Project } from './project';
 import { TagEntity } from './tag-entity';
 import { Variables } from './variables';
 import { CredentialsEntity } from './credentials-entity';
-// import { SourceControlPreferencesEntity } from './source-control-preferences';
 import { EventDestinations } from './event-destinations';
+import { InstalledNodes } from './installed-nodes';
+import { InstalledPackages } from './installed-packages';
+// import { SourceControlPreferencesEntity } from './source-control-preferences';
 
 @Entity()
 export class Tenant {
@@ -18,50 +20,63 @@ export class Tenant {
 	@Column({ type: 'varchar', length: 255, nullable: true })
 	domain: string | null;
 
-	// @Column({ type: 'boolean', default: true })
-	// showSetupOnFirstLoad: boolean;
+	// ---------------------------------------------
+	// Relations
+	// ---------------------------------------------
 
-	// Relation with User (via user.tenantId)
+	// 🔹 Relation with Users
 	@OneToMany(
 		() => User,
 		(user) => user.tenant,
 	)
 	users: User[];
 
-	// Relation with Project (via project.tenantId)
+	// 🔹 Relation with Projects
 	@OneToMany(
 		() => Project,
 		(project) => project.tenant,
 	)
 	projects: Project[];
+
+	// 🔹 Relation with Tags
 	@OneToMany(
 		() => TagEntity,
 		(tag) => tag.tenant,
 	)
 	tags: TagEntity[];
 
-	// Relation with variable (via variable.tenantId)
+	// 🔹 Relation with Variables
 	@OneToMany(
 		() => Variables,
 		(variable) => variable.tenant,
 	)
 	variables: Variables[];
 
-	// 👇 New: Relation with Credentials
+	// 🔹 Relation with Credentials
 	@OneToMany(
 		() => CredentialsEntity,
 		(credential) => credential.tenant,
 	)
 	credentials: CredentialsEntity[];
-	// @OneToMany(
-	// 	() => SourceControlPreferencesEntity,
-	// 	(sourceControlPreferences) => sourceControlPreferences.tenant,
-	// )
-	// sourceControlPreferences: SourceControlPreferencesEntity[];
 
+	// 🔹 Relation with Event Destinations
 	@OneToMany(
 		() => EventDestinations,
 		(dest) => dest.tenant,
 	)
 	eventDestinations: EventDestinations[];
+
+	// 🔹 Uncomment if Source Control Preferences are reintroduced
+	// @OneToMany(() => SourceControlPreferencesEntity, (scp) => scp.tenant)
+	// sourceControlPreferences: SourceControlPreferencesEntity[];
+	@OneToMany(
+		() => InstalledNodes,
+		(node) => node.tenant,
+	)
+	installedNodes: InstalledNodes[];
+	@OneToMany(
+		() => InstalledPackages,
+		(pkg) => pkg.tenant,
+	)
+	installedPackages: InstalledPackages[];
 }

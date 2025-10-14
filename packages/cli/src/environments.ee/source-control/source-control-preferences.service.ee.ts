@@ -198,38 +198,38 @@ export class SourceControlPreferencesService {
 	}
 
 	async setPreferences(
-    preferences: Partial<SourceControlPreferences>,
-    saveToDb = true,
-): Promise<SourceControlPreferences> {
-    const noKeyPair = (await this.getKeyPairFromDatabase()) === null;
+		preferences: Partial<SourceControlPreferences>,
+		saveToDb = true,
+	): Promise<SourceControlPreferences> {
+		const noKeyPair = (await this.getKeyPairFromDatabase()) === null;
 
-    if (noKeyPair) await this.generateAndSaveKeyPair();
+		if (noKeyPair) await this.generateAndSaveKeyPair();
 
-    // Merge new preferences with existing ones
-    this.sourceControlPreferences = {
-        ...this.sourceControlPreferences,
-        ...preferences,
-        tenantId: preferences.tenantId ?? this.sourceControlPreferences.tenantId,
-    };
+		// Merge new preferences with existing ones
+		this.sourceControlPreferences = {
+			...this.sourceControlPreferences,
+			...preferences,
+			tenantId: preferences.tenantId ?? this.sourceControlPreferences.tenantId,
+		};
 
-    if (saveToDb) {
-        const settingsValue = JSON.stringify(this.sourceControlPreferences);
-        try {
-            await this.settingsRepository.save(
-                {
-                    key: SOURCE_CONTROL_PREFERENCES_DB_KEY,
-                    value: settingsValue,
-                    loadOnStartup: true,
-                    tenant_id: this.sourceControlPreferences.tenantId, // Save tenantId to tenant_id column
-                },
-                { transaction: false },
-            );
-        } catch (error) {
-            throw new UnexpectedError('Failed to save source control preferences', { cause: error });
-        }
-    }
-    return this.sourceControlPreferences;
-}
+		if (saveToDb) {
+			const settingsValue = JSON.stringify(this.sourceControlPreferences);
+			try {
+				await this.settingsRepository.save(
+					{
+						key: SOURCE_CONTROL_PREFERENCES_DB_KEY,
+						value: settingsValue,
+						loadOnStartup: true,
+						tenant_id: this.sourceControlPreferences.tenantId, // Save tenantId to tenant_id column
+					},
+					{ transaction: false },
+				);
+			} catch (error) {
+				throw new UnexpectedError('Failed to save source control preferences', { cause: error });
+			}
+		}
+		return this.sourceControlPreferences;
+	}
 
 	async loadFromDbAndApplySourceControlPreferences(): Promise<
 		SourceControlPreferences | undefined

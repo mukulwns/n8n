@@ -36,6 +36,7 @@ describe('LogStreamingEventRelay', () => {
 				publicApi: false,
 				projectId: 'proj123',
 				projectType: 'personal',
+				tenantId: 'tn123',
 			};
 
 			eventService.emit('workflow-created', event);

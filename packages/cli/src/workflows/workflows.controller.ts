@@ -223,6 +223,7 @@ export class WorkflowsController {
 			publicApi: false,
 			projectId: project!.id,
 			projectType: project!.type,
+			tenantId: req.user.tenantId,
 			// uiContext: req.body.uiContext,
 		});
 
@@ -389,6 +390,7 @@ export class WorkflowsController {
 			tags,
 			parentFolderId,
 			isSharingEnabled ? forceSave : true,
+			req.user.tenantId,
 		);
 
 		const scopes = await this.workflowService.getWorkflowScopes(req.user, workflowId);
@@ -399,7 +401,12 @@ export class WorkflowsController {
 	@Delete('/:workflowId')
 	@ProjectScope('workflow:delete')
 	async delete(req: AuthenticatedRequest, _res: Response, @Param('workflowId') workflowId: string) {
-		const workflow = await this.workflowService.delete(req.user, workflowId);
+		const workflow = await this.workflowService.delete(
+			req.user,
+			workflowId,
+			false,
+			req.user.tenantId,
+		);
 		if (!workflow) {
 			this.logger.warn('User attempted to delete a workflow without permissions', {
 				workflowId,
@@ -420,7 +427,12 @@ export class WorkflowsController {
 		_res: Response,
 		@Param('workflowId') workflowId: string,
 	) {
-		const workflow = await this.workflowService.archive(req.user, workflowId);
+		const workflow = await this.workflowService.archive(
+			req.user,
+			workflowId,
+			false,
+			req.user.tenantId,
+		);
 		if (!workflow) {
 			this.logger.warn('User attempted to archive a workflow without permissions', {
 				workflowId,
@@ -441,7 +453,7 @@ export class WorkflowsController {
 		_res: Response,
 		@Param('workflowId') workflowId: string,
 	) {
-		const workflow = await this.workflowService.unarchive(req.user, workflowId);
+		const workflow = await this.workflowService.unarchive(req.user, workflowId, req.user.tenantId);
 		if (!workflow) {
 			this.logger.warn('User attempted to unarchive a workflow without permissions', {
 				workflowId,
@@ -543,6 +555,7 @@ export class WorkflowsController {
 			workflowId,
 			userIdSharer: req.user.id,
 			userIdList: shareWithIds,
+			tenantId: req.user.tenantId,
 		});
 
 		const projectsRelations = await this.projectRelationRepository.findBy({

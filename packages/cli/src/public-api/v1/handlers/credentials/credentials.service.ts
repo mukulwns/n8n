@@ -117,6 +117,7 @@ export async function removeCredential(
 		user,
 		credentialType: credentials.type,
 		credentialId: credentials.id,
+		tenantId: user.tenantId,
 	});
 	return await Container.get(CredentialsRepository).remove(credentials);
 }

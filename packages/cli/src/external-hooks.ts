@@ -149,12 +149,13 @@ export class ExternalHooks {
 	async run<HookName extends HookNames>(
 		hookName: HookName,
 		hookParameters?: ExternalHooksMap[HookName],
+		tenantId?: string,
 	): Promise<void> {
 		const { registered, dbCollections } = this;
 		const hookFunctions = registered[hookName];
 		if (!hookFunctions?.length) return;
 
-		const context = { dbCollections };
+		const context = { dbCollections, tenantId };
 
 		for (const hookFunction of hookFunctions) {
 			try {

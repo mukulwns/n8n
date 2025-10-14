@@ -199,6 +199,7 @@ export class WorkflowService {
 		tagIds?: string[],
 		parentFolderId?: string,
 		forceSave?: boolean,
+		tenantId?: string,
 	): Promise<WorkflowEntity> {
 		const workflow = await this.workflowFinderService.findWorkflowForUser(workflowId, user, [
 			'workflow:update',
@@ -347,6 +348,7 @@ export class WorkflowService {
 			user,
 			workflow: updatedWorkflow,
 			publicApi: false,
+			tenantId,
 		});
 
 		if (updatedWorkflow.active) {
@@ -384,7 +386,12 @@ export class WorkflowService {
 	 * If the user does not have the permissions to delete the workflow this does
 	 * nothing and returns void.
 	 */
-	async delete(user: User, workflowId: string, force = false): Promise<WorkflowEntity | undefined> {
+	async delete(
+		user: User,
+		workflowId: string,
+		force = false,
+		tenantId: string,
+	): Promise<WorkflowEntity | undefined> {
 		await this.externalHooks.run('workflow.delete', [workflowId]);
 
 		const workflow = await this.workflowFinderService.findWorkflowForUser(workflowId, user, [
@@ -414,7 +421,7 @@ export class WorkflowService {
 		await this.workflowRepository.delete(workflowId);
 		await this.binaryDataService.deleteMany(idsForDeletion);
 
-		this.eventService.emit('workflow-deleted', { user, workflowId, publicApi: false });
+		this.eventService.emit('workflow-deleted', { user, workflowId, publicApi: false, tenantId });
 		await this.externalHooks.run('workflow.afterDelete', [workflowId]);
 
 		return workflow;
@@ -424,6 +431,7 @@ export class WorkflowService {
 		user: User,
 		workflowId: string,
 		skipArchived: boolean = false,
+		tenantId?: string,
 	): Promise<WorkflowEntity | undefined> {
 		const workflow = await this.workflowFinderService.findWorkflowForUser(workflowId, user, [
 			'workflow:delete',
@@ -452,7 +460,7 @@ export class WorkflowService {
 			versionId,
 		});
 
-		this.eventService.emit('workflow-archived', { user, workflowId, publicApi: false });
+		this.eventService.emit('workflow-archived', { user, workflowId, publicApi: false, tenantId });
 		await this.externalHooks.run('workflow.afterArchive', [workflowId]);
 
 		workflow.isArchived = true;
@@ -462,7 +470,11 @@ export class WorkflowService {
 		return workflow;
 	}
 
-	async unarchive(user: User, workflowId: string): Promise<WorkflowEntity | undefined> {
+	async unarchive(
+		user: User,
+		workflowId: string,
+		tenantId?: string,
+	): Promise<WorkflowEntity | undefined> {
 		const workflow = await this.workflowFinderService.findWorkflowForUser(workflowId, user, [
 			'workflow:delete',
 		]);
@@ -478,7 +490,7 @@ export class WorkflowService {
 		const versionId = uuid();
 		await this.workflowRepository.update(workflowId, { isArchived: false, versionId });
 
-		this.eventService.emit('workflow-unarchived', { user, workflowId, publicApi: false });
+		this.eventService.emit('workflow-unarchived', { user, workflowId, publicApi: false, tenantId });
 		await this.externalHooks.run('workflow.afterUnarchive', [workflowId]);
 
 		workflow.isArchived = false;

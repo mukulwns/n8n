@@ -92,26 +92,31 @@ export class CommunityPackagesService {
 		return this.missingPackages.length > 0;
 	}
 
-	async findInstalledPackage(packageName: string) {
+	async findInstalledPackage(packageName: string, tenantId?: string) {
 		return await this.installedPackageRepository.findOne({
-			where: { packageName },
+			where: { packageName, tenantId },
 			relations: ['installedNodes'],
 		});
 	}
 
-	async isPackageInstalled(packageName: string) {
-		return await this.installedPackageRepository.exist({ where: { packageName } });
+	async isPackageInstalled(packageName: string, tenantId?: string) {
+		return await this.installedPackageRepository.exist({ where: { packageName, tenantId } });
 	}
 
-	async getAllInstalledPackages() {
-		return await this.installedPackageRepository.find({ relations: ['installedNodes'] });
+	async getAllInstalledPackages(tenantId?: string) {
+		return await this.installedPackageRepository.find({
+			where: { tenantId },
+			relations: ['installedNodes'],
+		});
 	}
 
 	private async removePackageFromDatabase(packageName: InstalledPackages) {
 		return await this.installedPackageRepository.remove(packageName);
 	}
 
-	private async persistInstalledPackage(packageLoader: PackageDirectoryLoader) {
+	private async persistInstalledPackage(
+		packageLoader: PackageDirectoryLoader & { tenantId: string },
+	) {
 		try {
 			return await this.installedPackageRepository.saveInstalledPackageWithNodes(packageLoader);
 		} catch (maybeError) {
@@ -120,6 +125,7 @@ export class CommunityPackagesService {
 			this.logger.error('Failed to save installed packages and nodes', {
 				error,
 				packageName: packageLoader.packageJson.name,
+				tenantId: packageLoader.tenantId, // ✅ log
 			});
 
 			throw error;
@@ -340,8 +346,9 @@ export class CommunityPackagesService {
 		packageName: string,
 		version?: string,
 		checksum?: string,
+		tenantId?: string,
 	): Promise<InstalledPackages> {
-		return await this.installOrUpdatePackage(packageName, { version, checksum });
+		return await this.installOrUpdatePackage(packageName, { version, checksum, tenantId });
 	}
 
 	async updatePackage(
@@ -349,8 +356,14 @@ export class CommunityPackagesService {
 		installedPackage: InstalledPackages,
 		version?: string,
 		checksum?: string,
+		tenantId?: string,
 	): Promise<InstalledPackages> {
-		return await this.installOrUpdatePackage(packageName, { installedPackage, version, checksum });
+		return await this.installOrUpdatePackage(packageName, {
+			installedPackage,
+			version,
+			checksum,
+			tenantId,
+		});
 	}
 
 	async removePackage(packageName: string, installedPackage: InstalledPackages): Promise<void> {
@@ -385,8 +398,17 @@ export class CommunityPackagesService {
 	private async installOrUpdatePackage(
 		packageName: string,
 		options:
-			| { version?: string; checksum?: string }
-			| { installedPackage: InstalledPackages; version?: string; checksum?: string } = {},
+			| {
+					version?: string;
+					checksum?: string;
+					tenantId?: string;
+			  }
+			| {
+					installedPackage: InstalledPackages;
+					version?: string;
+					checksum?: string;
+					tenantId?: string;
+			  } = {},
 	) {
 		const isUpdate = 'installedPackage' in options;
 		const packageVersion = !options.version ? 'latest' : options.version;
@@ -427,7 +449,13 @@ export class CommunityPackagesService {
 				if (isUpdate) {
 					await this.removePackageFromDatabase(options.installedPackage);
 				}
+				if (!options.tenantId) {
+					throw new Error('tenantId is required to install a package');
+				}
+				loader.tenantId = options.tenantId; // ✅ set tenantId on the actual loader instance
+
 				const installedPackage = await this.persistInstalledPackage(loader);
+
 				void this.publisher.publishCommand({
 					command: isUpdate ? 'community-package-update' : 'community-package-install',
 					payload: { packageName, packageVersion },

@@ -67,6 +67,7 @@ export = {
 				publicApi: true,
 				projectId: project.id,
 				projectType: project.type,
+				tenantId: req.user.tenantId,
 			});
 
 			return res.json(createdWorkflow);
@@ -95,7 +96,12 @@ export = {
 		async (req: WorkflowRequest.Get, res: express.Response): Promise<express.Response> => {
 			const { id: workflowId } = req.params;
 
-			const workflow = await Container.get(WorkflowService).delete(req.user, workflowId, true);
+			const workflow = await Container.get(WorkflowService).delete(
+				req.user,
+				workflowId,
+				true,
+				req.user.tenantId,
+			);
 			if (!workflow) {
 				// user trying to access a workflow they do not own
 				// or workflow does not exist

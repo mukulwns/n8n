@@ -131,7 +131,7 @@ export class PasswordResetController {
 			publicApi: false,
 		});
 
-		this.eventService.emit('user-password-reset-request-click', { user });
+		this.eventService.emit('user-password-reset-request-click', { user, tenantId: _req.tenantId });
 	}
 
 	/**
@@ -156,7 +156,7 @@ export class PasswordResetController {
 		}
 
 		this.logger.info('Reset-password token resolved successfully', { userId: user.id });
-		this.eventService.emit('user-password-reset-email-click', { user });
+		this.eventService.emit('user-password-reset-email-click', { user, tenantId: _req.tenantId });
 	}
 
 	/**
@@ -191,7 +191,11 @@ export class PasswordResetController {
 
 		this.authService.issueCookie(res, user, user.mfaEnabled, req.browserId);
 
-		this.eventService.emit('user-updated', { user, fieldsChanged: ['password'] });
+		this.eventService.emit('user-updated', {
+			user,
+			fieldsChanged: ['password'],
+			tenantId: req.tenantId,
+		});
 
 		// if this user used to be an LDAP user
 		const ldapIdentity = user?.authIdentities?.find((i) => i.providerType === 'ldap');

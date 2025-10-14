@@ -13,7 +13,7 @@ export class PackageDirectoryLoader extends DirectoryLoader {
 	packageJson: n8n.PackageJson;
 
 	packageName: string;
-
+	tenantId!: string;
 	constructor(directory: string, excludeNodes: string[] = [], includeNodes: string[] = []) {
 		super(directory, excludeNodes, includeNodes);
 

@@ -182,7 +182,7 @@ export class CredentialsController {
 			publicApi: false,
 			projectId: project?.id,
 			projectType: project?.type,
-			tenantId: req.user.tenantId ?? '',
+			tenantId: req.user.tenantId,
 		});
 
 		return newCredential;
@@ -240,6 +240,7 @@ export class CredentialsController {
 			user: req.user,
 			credentialType: credential.type,
 			credentialId: credential.id,
+			tenantId: req.user.tenantId,
 		});
 
 		const scopes = await this.credentialsService.getCredentialScopes(req.user, credential.id);
@@ -272,6 +273,7 @@ export class CredentialsController {
 			user: req.user,
 			credentialType: credential.type,
 			credentialId: credential.id,
+			tenantId: req.user.tenantId,
 		});
 
 		return true;
@@ -336,6 +338,7 @@ export class CredentialsController {
 			userIdSharer: req.user.id,
 			userIdsShareesAdded: newShareeIds,
 			shareesRemoved: amountRemoved,
+			tenantId: req.user.tenantId,
 		});
 
 		const projectsRelations = await this.projectRelationRepository.findBy({

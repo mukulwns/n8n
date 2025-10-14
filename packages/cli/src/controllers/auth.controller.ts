@@ -1,6 +1,6 @@
 import { LoginRequestDto, ResolveSignupTokenQueryDto } from '@n8n/api-types';
 import { Logger } from '@n8n/backend-common';
-import type { User, PublicUser } from '@n8n/db';
+import type { User, PublicUser, TenantRepository } from '@n8n/db';
 import { UserRepository, AuthenticatedRequest } from '@n8n/db';
 import { Body, Get, Post, Query, RestController } from '@n8n/decorators';
 import { Container } from '@n8n/di';
@@ -34,12 +34,10 @@ export class AuthController {
 		private readonly userService: UserService,
 		private readonly license: License,
 		private readonly userRepository: UserRepository,
+		private readonly tenantRepository: TenantRepository,
 		private readonly eventService: EventService,
 		private readonly postHog?: PostHogClient,
-	) { }
-
-
-
+	) {}
 
 	/** Log in a user */
 	@Post('/login', { skipAuth: true, rateLimit: true })
@@ -118,6 +116,7 @@ export class AuthController {
 			authenticationMethod: usedAuthenticationMethod,
 			userEmail: emailOrLdapLoginId,
 			reason: 'wrong credentials',
+			tenantId: req.tenantId,
 		});
 		throw new AuthError('Wrong username or password. Do you have caps lock on?');
 	}
@@ -141,7 +140,7 @@ export class AuthController {
 		_res: Response,
 		@Query payload: ResolveSignupTokenQueryDto,
 	) {
-		const { inviterId, inviteeId } = payload;
+		const { inviterId, inviteeId, tenantId } = payload;
 		const isWithinUsersLimit = this.license.isWithinUsersLimit();
 
 		if (!isWithinUsersLimit) {
@@ -163,6 +162,8 @@ export class AuthController {
 		}
 
 		const invitee = users.find((user) => user.id === inviteeId);
+		const tenants = await this.tenantRepository.findManyByIds([tenantId]);
+		const tenant = tenants.find((user) => user.id === tenantId);
 		if (!invitee || invitee.password) {
 			this.logger.error('Invalid invite URL - invitee already setup', {
 				inviterId,
@@ -182,7 +183,7 @@ export class AuthController {
 			throw new BadRequestError('Invalid request');
 		}
 
-		this.eventService.emit('user-invite-email-click', { inviter, invitee });
+		this.eventService.emit('user-invite-email-click', { inviter, invitee, tenant });
 
 		const { firstName, lastName } = inviter;
 		return { inviter: { firstName, lastName } };

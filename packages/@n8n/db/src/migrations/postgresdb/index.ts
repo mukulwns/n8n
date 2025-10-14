@@ -102,6 +102,8 @@ import { AddTenantToCredentials1755852500000 } from './1757421038733-17558520000
 import { AddTenantToSharedCredentials1755852600000 } from './1757679431442-AddTenantToSharedCredentials1755852600000';
 import { AddTenantToEventDestinations1755852450000 } from './1758029403293-AddTenantToEventDestinations1755852450000';
 import { AddTenantToWorkflows1755852460000 } from './1758695878444-AddTenantToWorkflows1755852460000';
+import { AddTenantIdToInstalledNodes1696838400000 } from './1760081457824-AddTenantIdToInstalledNodes1696838400000.ts';
+import { AddTenantIdToInstalledPackages1696789000000 } from './1760087515848-AddTenantIdToInstalledPackages1696789000000';
 export const postgresMigrations: Migration[] = [
 	InitialMigration1587669153312,
 	WebhookModel1589476000887,
@@ -204,4 +206,6 @@ export const postgresMigrations: Migration[] = [
 	AddTenantToSharedCredentials1755852600000,
 	AddTenantToEventDestinations1755852450000,
 	AddTenantToWorkflows1755852460000,
+	AddTenantIdToInstalledNodes1696838400000,
+	AddTenantIdToInstalledPackages1696789000000,
 ];

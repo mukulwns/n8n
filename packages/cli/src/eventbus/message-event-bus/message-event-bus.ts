@@ -372,16 +372,41 @@ export class MessageEventBus extends EventEmitter {
 		return false;
 	}
 
+	// private async emitMessage(msg: EventMessageTypes) {
+	// 	this.emit('metrics.eventBus.event', msg);
+
+	// 	// generic emit for external modules to capture events
+	// 	// this is for internal use ONLY and not for use with custom destinations!
+	// 	this.emitMessageWithCallback('message', msg);
+
+	// 	if (this.shouldSendMsg(msg)) {
+	// 		for (const destinationName of Object.keys(this.destinations)) {
+	// 			this.emitMessageWithCallback(this.destinations[destinationName].getId(), msg);
+	// 		}
+	// 	}
+	// }
 	private async emitMessage(msg: EventMessageTypes) {
+		// console.log(msg, "MSG_+_+_+_+")
 		this.emit('metrics.eventBus.event', msg);
 
 		// generic emit for external modules to capture events
-		// this is for internal use ONLY and not for use with custom destinations!
 		this.emitMessageWithCallback('message', msg);
 
 		if (this.shouldSendMsg(msg)) {
 			for (const destinationName of Object.keys(this.destinations)) {
-				this.emitMessageWithCallback(this.destinations[destinationName].getId(), msg);
+				const destination = this.destinations[destinationName];
+
+				// ✅ Tenant filter: sirf wahi destination jiska tenantId == msg.tenantId
+				// (msg me tenantId hona chahiye, jaise Audit/Workflow/Execution events me hota hai)
+				if (
+					(destination as any).tenantId &&
+					(msg as any).payload.tenantId &&
+					(destination as any).tenantId !== (msg as any).payload.tenantId
+				) {
+					continue; // skip dusre tenant ke destinations
+				}
+
+				this.emitMessageWithCallback(destination.getId(), msg);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 import { Service } from '@n8n/di';
 import { DataSource, Repository, IsNull } from '@n8n/typeorm';
-import { Settings } from '../entities';
+import { Settings } from '../entities/settings';
 
 @Service()
 export class SettingsRepository extends Repository<Settings> {
@@ -23,27 +23,27 @@ export class SettingsRepository extends Repository<Settings> {
 		return setting;
 	}
 
-	// async saveByKey(
-	// 	key: string,
-	// 	value: unknown,
-	// 	tenantId?: string,
-	// 	loadOnStartup = true,
-	// ): Promise<Settings> {
-	// 	const existing = await this.findOne({
-	// 		where: { key, tenantId: tenantId ?? IsNull() },
-	// 	});
+	async saveByKey(
+		key: string,
+		value: unknown,
+		tenantId?: string,
+		loadOnStartup = true,
+	): Promise<Settings> {
+		const existing = await this.findOne({
+			where: { key, tenantId: tenantId ?? IsNull() },
+		});
 
-	// 	if (existing) {
-	// 		existing.value = JSON.stringify(value);
-	// 		existing.loadOnStartup = loadOnStartup;
-	// 		return await this.save(existing);
-	// 	}
+		if (existing) {
+			existing.value = JSON.stringify(value);
+			existing.loadOnStartup = loadOnStartup;
+			return await this.save(existing);
+		}
 
-	// 	return await this.save({
-	// 		key,
-	// 		tenantId: tenantId ?? null,
-	// 		value: JSON.stringify(value),
-	// 		loadOnStartup,
-	// 	});
-	// }
+		return await this.save({
+			key,
+			tenantId,
+			value: JSON.stringify(value),
+			loadOnStartup,
+		});
+	}
 }

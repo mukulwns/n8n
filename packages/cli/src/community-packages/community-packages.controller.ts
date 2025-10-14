@@ -53,7 +53,7 @@ export class CommunityPackagesController {
 
 		let checksum: string | undefined = undefined;
 
-		// Get the checksum for the package if flagged to verify
+		// ✅ Step 1: Validate package if verification requested
 		if (verify) {
 			checksum = this.communityNodeTypesService.findVetted(name)?.checksum;
 			if (!checksum) {
@@ -80,7 +80,11 @@ export class CommunityPackagesController {
 			);
 		}
 
-		const isInstalled = await this.communityPackagesService.isPackageInstalled(parsed.packageName);
+		// ✅ Step 2: Tenant-aware package installation check
+		const isInstalled = await this.communityPackagesService.isPackageInstalled(
+			parsed.packageName,
+			req.user.tenantId, // 👈 added tenant filter
+		);
 		const hasLoaded = this.communityPackagesService.hasPackageLoaded(name);
 
 		if (isInstalled && hasLoaded) {
@@ -100,15 +104,19 @@ export class CommunityPackagesController {
 
 		const packageVersion = version ?? parsed.version;
 		let installedPackage: InstalledPackages;
+
 		try {
+			// ✅ Step 3: Pass tenantId while installing package
 			installedPackage = await this.communityPackagesService.installPackage(
 				parsed.packageName,
 				packageVersion,
 				checksum,
+				req.user.tenantId, // 👈 tenant added
 			);
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : UNKNOWN_FAILURE_REASON;
 
+			// ✅ Step 4: Emit event with tenantId for failed install
 			this.eventService.emit('community-package-installed', {
 				user: req.user,
 				inputString: name,
@@ -116,6 +124,7 @@ export class CommunityPackagesController {
 				success: false,
 				packageVersion,
 				failureReason: errorMessage,
+				tenantId: req.user.tenantId, // 👈 tenant added
 			});
 
 			let message = [`Error loading package "${name}" `, errorMessage].join(':');
@@ -127,9 +136,10 @@ export class CommunityPackagesController {
 			throw new (clientError ? BadRequestError : InternalServerError)(message);
 		}
 
+		// ✅ Step 5: Remove from missing list only if not yet loaded
 		if (!hasLoaded) this.communityPackagesService.removePackageFromMissingList(name);
 
-		// broadcast to connected frontends that node list has been updated
+		// ✅ Step 6: Notify UI (no tenant filter needed — broadcast is global)
 		installedPackage.installedNodes.forEach((node) => {
 			this.push.broadcast({
 				type: 'reloadNodeType',
@@ -140,6 +150,7 @@ export class CommunityPackagesController {
 			});
 		});
 
+		// ✅ Step 7: Emit successful installation event with tenant info
 		this.eventService.emit('community-package-installed', {
 			user: req.user,
 			inputString: name,
@@ -149,6 +160,7 @@ export class CommunityPackagesController {
 			packageNodeNames: installedPackage.installedNodes.map((node) => node.name),
 			packageAuthor: installedPackage.authorName,
 			packageAuthorEmail: installedPackage.authorEmail,
+			tenantId: req.user.tenantId, // 👈 tenant added
 		});
 
 		return installedPackage;
@@ -156,8 +168,15 @@ export class CommunityPackagesController {
 
 	@Get('/')
 	@GlobalScope('communityPackage:list')
-	async getInstalledPackages() {
-		const installedPackages = await this.communityPackagesService.getAllInstalledPackages();
+	async getInstalledPackages(req: NodeRequest.GetAll) {
+		// ✅ Extract tenantId (depends on how you store it)
+		const tenantId = req.user?.tenantId || 'default';
+
+		if (!tenantId) {
+			throw new Error('Tenant ID is required');
+		}
+
+		const installedPackages = await this.communityPackagesService.getAllInstalledPackages(tenantId);
 
 		if (installedPackages.length === 0) return [];
 
@@ -167,9 +186,6 @@ export class CommunityPackagesController {
 			const command = ['npm', 'outdated', '--json'].join(' ');
 			await this.communityPackagesService.executeNpmCommand(command, { doNotHandleError: true });
 		} catch (error) {
-			// when there are updates, npm exits with code 1
-			// when there are no updates, command succeeds
-			// https://github.com/npm/rfcs/issues/473
 			if (isNpmError(error) && error.code === 1) {
 				pendingUpdates = JSON.parse(error.stdout) as CommunityPackages.AvailableUpdates;
 			}
@@ -193,44 +209,41 @@ export class CommunityPackagesController {
 	@GlobalScope('communityPackage:uninstall')
 	async uninstallPackage(req: NodeRequest.Delete) {
 		const { name } = req.query;
+		const tenantId = req.user?.tenantId;
 
-		if (!name) {
-			throw new BadRequestError(PACKAGE_NAME_NOT_PROVIDED);
-		}
+		if (!name) throw new BadRequestError(PACKAGE_NAME_NOT_PROVIDED);
+		if (!tenantId) throw new BadRequestError('Tenant ID missing');
 
 		try {
-			this.communityPackagesService.parseNpmPackageName(name); // sanitize input
+			this.communityPackagesService.parseNpmPackageName(name);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : UNKNOWN_FAILURE_REASON;
-
 			throw new BadRequestError(message);
 		}
 
-		const installedPackage = await this.communityPackagesService.findInstalledPackage(name);
+		const installedPackage = await this.communityPackagesService.findInstalledPackage(
+			name,
+			tenantId,
+		);
 
 		if (!installedPackage) {
-			throw new BadRequestError(PACKAGE_NOT_INSTALLED);
+			throw new BadRequestError('Package not installed for this tenant');
 		}
 
 		try {
 			await this.communityPackagesService.removePackage(name, installedPackage);
 		} catch (error) {
-			const message = [
-				`Error removing package "${name}"`,
-				error instanceof Error ? error.message : UNKNOWN_FAILURE_REASON,
-			].join(':');
-
+			const message = `Error removing package "${name}": ${
+				error instanceof Error ? error.message : UNKNOWN_FAILURE_REASON
+			}`;
 			throw new InternalServerError(message, error);
 		}
 
-		// broadcast to connected frontends that node list has been updated
+		// Notify connected clients
 		installedPackage.installedNodes.forEach((node) => {
 			this.push.broadcast({
 				type: 'removeNodeType',
-				data: {
-					name: node.type,
-					version: node.latestVersion,
-				},
+				data: { name: node.type, version: node.latestVersion },
 			});
 		});
 
@@ -238,9 +251,10 @@ export class CommunityPackagesController {
 			user: req.user,
 			packageName: name,
 			packageVersion: installedPackage.installedVersion,
-			packageNodeNames: installedPackage.installedNodes.map((node) => node.name),
+			packageNodeNames: installedPackage.installedNodes.map((n) => n.name),
 			packageAuthor: installedPackage.authorName,
 			packageAuthorEmail: installedPackage.authorEmail,
+			tenantId,
 		});
 	}
 
@@ -248,16 +262,18 @@ export class CommunityPackagesController {
 	@GlobalScope('communityPackage:update')
 	async updatePackage(req: NodeRequest.Update) {
 		const { name, version, checksum } = req.body;
+		const tenantId = req.user?.tenantId;
 
-		if (!name) {
-			throw new BadRequestError(PACKAGE_NAME_NOT_PROVIDED);
-		}
+		if (!name) throw new BadRequestError(PACKAGE_NAME_NOT_PROVIDED);
+		if (!tenantId) throw new BadRequestError('Tenant ID missing');
 
-		const previouslyInstalledPackage =
-			await this.communityPackagesService.findInstalledPackage(name);
+		const previouslyInstalledPackage = await this.communityPackagesService.findInstalledPackage(
+			name,
+			tenantId,
+		);
 
 		if (!previouslyInstalledPackage) {
-			throw new BadRequestError(PACKAGE_NOT_INSTALLED);
+			throw new BadRequestError('Package not installed for this tenant');
 		}
 
 		try {
@@ -266,26 +282,21 @@ export class CommunityPackagesController {
 				previouslyInstalledPackage,
 				version,
 				checksum,
+				tenantId, // ✅ pass tenantId to service
 			);
 
-			// broadcast to connected frontends that node list has been updated
+			// Notify clients
 			previouslyInstalledPackage.installedNodes.forEach((node) => {
 				this.push.broadcast({
 					type: 'removeNodeType',
-					data: {
-						name: node.type,
-						version: node.latestVersion,
-					},
+					data: { name: node.type, version: node.latestVersion },
 				});
 			});
 
 			newInstalledPackage.installedNodes.forEach((node) => {
 				this.push.broadcast({
 					type: 'reloadNodeType',
-					data: {
-						name: node.type,
-						version: node.latestVersion,
-					},
+					data: { name: node.type, version: node.latestVersion },
 				});
 			});
 
@@ -297,26 +308,17 @@ export class CommunityPackagesController {
 				packageNodeNames: newInstalledPackage.installedNodes.map((n) => n.name),
 				packageAuthor: newInstalledPackage.authorName,
 				packageAuthorEmail: newInstalledPackage.authorEmail,
+				tenantId,
 			});
 
 			return newInstalledPackage;
 		} catch (error) {
-			previouslyInstalledPackage.installedNodes.forEach((node) => {
-				this.push.broadcast({
-					type: 'removeNodeType',
-					data: {
-						name: node.type,
-						version: node.latestVersion,
-					},
-				});
-			});
-
-			const message = [
-				`Error removing package "${name}"`,
-				error instanceof Error ? error.message : UNKNOWN_FAILURE_REASON,
-			].join(':');
-
-			throw new InternalServerError(message, error);
+			throw new InternalServerError(
+				`Error updating package "${name}": ${
+					error instanceof Error ? error.message : UNKNOWN_FAILURE_REASON
+				}`,
+				error,
+			);
 		}
 	}
 }

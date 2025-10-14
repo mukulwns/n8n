@@ -67,6 +67,7 @@ const loading = ref(false);
 const inviter = ref<null | { firstName: string; lastName: string }>(null);
 const inviterId = ref<string | null>(null);
 const inviteeId = ref<string | null>(null);
+const tenantId = ref<string | null>(null);
 
 const inviteMessage = computed(() => {
 	if (!inviter.value) {
@@ -81,17 +82,20 @@ const inviteMessage = computed(() => {
 onMounted(async () => {
 	const inviterIdParam = getQueryParameter('inviterId');
 	const inviteeIdParam = getQueryParameter('inviteeId');
+	const tenantIdParam = getQueryParameter('tenantId');
+
 	try {
-		if (!inviterIdParam || !inviteeIdParam) {
+		if (!inviterIdParam || !inviteeIdParam || !tenantIdParam) {
 			throw new Error(i18n.baseText('auth.signup.missingTokenError'));
 		}
 
 		inviterId.value = inviterIdParam;
 		inviteeId.value = inviteeIdParam;
-
+		tenantId.value = tenantIdParam;
 		const invite = await usersStore.validateSignupToken({
 			inviteeId: inviteeId.value,
 			inviterId: inviterId.value,
+			tenantId: tenantId.value,
 		});
 		inviter.value = invite.inviter as { firstName: string; lastName: string };
 	} catch (e) {
@@ -136,7 +140,7 @@ async function onSubmit(values: { [key: string]: string | boolean }) {
 	loading.value = false;
 }
 
-function getQueryParameter(key: 'inviterId' | 'inviteeId'): string | null {
+function getQueryParameter(key: 'inviterId' | 'inviteeId' | 'tenantId'): string | null {
 	return !route.query[key] || typeof route.query[key] !== 'string' ? null : route.query[key];
 }
 </script>

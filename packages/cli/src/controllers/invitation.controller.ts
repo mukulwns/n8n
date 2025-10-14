@@ -133,6 +133,7 @@ export class InvitationController {
 			user: updatedUser,
 			userType: 'email',
 			wasDisabledLdapUser: false,
+			tenantId: req.tenantId,
 		});
 
 		const publicInvitee = await this.userService.toPublic(invitee);

@@ -324,7 +324,7 @@ export class SamlService {
 		tenantId?: string,
 	): Promise<SamlPreferences | undefined> {
 		const samlPreferences = await this.settingsRepository.findOne({
-			where: { key: SAML_PREFERENCES_DB_KEY },
+			where: { key: SAML_PREFERENCES_DB_KEY, tenantId },
 		});
 		if (samlPreferences) {
 			const prefs = jsonParse<SamlPreferences>(samlPreferences.value);
@@ -332,7 +332,7 @@ export class SamlService {
 				if (apply) {
 					await this.setSamlPreferences(prefs, tenantId, true);
 				} else {
-					await this.loadPreferencesWithoutValidation(prefs);
+					await this.loadPreferencesWithoutValidation(prefs, tenantId);
 				}
 				return prefs;
 			}

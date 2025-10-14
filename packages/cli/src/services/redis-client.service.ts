@@ -208,9 +208,8 @@ export class RedisClientService extends TypedEmitter<RedisEventMap> {
 	override emit<EventName extends keyof RedisEventMap>(
 		eventName: EventName,
 		payload?: RedisEventMap[EventName],
-		tenantId?: string,
 	): boolean {
-		return super.emit(eventName, payload, tenantId);
+		return super.emit(eventName, payload);
 	}
 
 	private registerListeners() {

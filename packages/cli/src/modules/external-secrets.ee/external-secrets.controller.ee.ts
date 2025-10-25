@@ -27,8 +27,8 @@ export class ExternalSecretsController {
 
 	@Get('/providers')
 	@GlobalScope('externalSecretsProvider:list')
-	async getProviders() {
-		return await this.secretsService.getProviders();
+	async getProviders(req: ExternalSecretsRequest.GetProvider) {
+		return await this.secretsService.getProviders(req.user.tenantId);
 	}
 
 	@Get('/providers/:provider')
@@ -55,7 +55,12 @@ export class ExternalSecretsController {
 	@GlobalScope('externalSecretsProvider:create')
 	async setProviderSettings(req: ExternalSecretsRequest.SetProviderSettings) {
 		const providerName = req.params.provider;
-		await this.secretsService.saveProviderSettings(providerName, req.body, req.user.id);
+		await this.secretsService.saveProviderSettings(
+			providerName,
+			req.body,
+			req.user.id,
+			req.user.tenantId,
+		);
 		return {};
 	}
 
@@ -63,7 +68,11 @@ export class ExternalSecretsController {
 	@GlobalScope('externalSecretsProvider:update')
 	async setProviderConnected(req: ExternalSecretsRequest.SetProviderConnected) {
 		const providerName = req.params.provider;
-		await this.secretsService.saveProviderConnected(providerName, req.body.connected);
+		await this.secretsService.saveProviderConnected(
+			providerName,
+			req.body.connected,
+			req.user.tenantId,
+		);
 		return {};
 	}
 
@@ -82,7 +91,7 @@ export class ExternalSecretsController {
 
 	@Get('/secrets')
 	@GlobalScope('externalSecret:list')
-	getSecretNames() {
-		return this.secretsService.getAllSecrets();
+	getSecretNames(req: ExternalSecretsRequest.GetProvider) {
+		return this.secretsService.getAllSecrets(req.user.tenantId);
 	}
 }

@@ -94,9 +94,9 @@ export class ExternalSecretsManager implements IExternalSecretsManager {
 		void this.publisher.publishCommand({ command: 'reload-external-secrets-providers' });
 	}
 
-	async getDecryptedSettings(): Promise<ExternalSecretsSettings | null> {
+	async getDecryptedSettings(tenantId?: string): Promise<ExternalSecretsSettings | null> {
 		const encryptedSettings =
-			(await this.settingsRepo.findByKey(EXTERNAL_SECRETS_DB_KEY))?.value ?? null;
+			(await this.settingsRepo.findByKey(`${tenantId}_${EXTERNAL_SECRETS_DB_KEY}`))?.value ?? null;
 		if (encryptedSettings === null) {
 			return null;
 		}
@@ -234,8 +234,20 @@ export class ExternalSecretsManager implements IExternalSecretsManager {
 			]),
 		);
 	}
-
-	getProvidersWithSettings(): Array<{
+	// getAllSecretNames(tenantId: string): Record<string, string[]> {
+	// 	const tenantPrefix = `${tenantId}_`; // e.g. tenant123_
+	// 	const tenantProviders = Object.keys(this.providers).filter((key) =>
+	// 		key.startsWith(tenantPrefix),
+	// 	);
+	// 	console.log(tenantProviders, "tenantProviders------------", "this.providers", this.providers)
+	// 	return Object.fromEntries(
+	// 		tenantProviders.map((provider) => [
+	// 			provider.replace(tenantPrefix, ''), // remove prefix for clean display
+	// 			this.getSecretNames(provider) ?? [],
+	// 		]),
+	// 	);
+	// }
+	getProvidersWithSettings(tenantId?: string): Array<{
 		provider: SecretsProvider;
 		settings: SecretsProviderSettings;
 	}> {
@@ -269,9 +281,14 @@ export class ExternalSecretsManager implements IExternalSecretsManager {
 		this.logger.debug(`External secrets manager reloaded provider ${provider}`);
 	}
 
-	async setProviderSettings(provider: string, data: IDataObject, userId?: string) {
+	async setProviderSettings(
+		provider: string,
+		data: IDataObject,
+		userId?: string,
+		tenantId?: string,
+	) {
 		let isNewProvider = false;
-		let settings = await this.getDecryptedSettings();
+		let settings = await this.getDecryptedSettings(tenantId);
 		if (!settings) {
 			settings = {};
 		}
@@ -284,7 +301,7 @@ export class ExternalSecretsManager implements IExternalSecretsManager {
 			settings: data,
 		};
 
-		await this.saveAndSetSettings(settings);
+		await this.saveAndSetSettings(settings, tenantId);
 		this.cachedSettings = settings;
 		await this.reloadProvider(provider);
 		this.broadcastReloadExternalSecretsProviders();
@@ -292,8 +309,8 @@ export class ExternalSecretsManager implements IExternalSecretsManager {
 		void this.trackProviderSave(provider, isNewProvider, userId);
 	}
 
-	async setProviderConnected(provider: string, connected: boolean) {
-		let settings = await this.getDecryptedSettings();
+	async setProviderConnected(provider: string, connected: boolean, tenantId: string) {
+		let settings = await this.getDecryptedSettings(tenantId);
 		if (!settings) {
 			settings = {};
 		}
@@ -328,11 +345,11 @@ export class ExternalSecretsManager implements IExternalSecretsManager {
 		return this.cipher.encrypt(settings);
 	}
 
-	async saveAndSetSettings(settings: ExternalSecretsSettings) {
+	async saveAndSetSettings(settings: ExternalSecretsSettings, tenantId?: string) {
 		const encryptedSettings = this.encryptSecretsSettings(settings);
 		await this.settingsRepo.upsert(
 			{
-				key: EXTERNAL_SECRETS_DB_KEY,
+				key: `${tenantId}_${EXTERNAL_SECRETS_DB_KEY}`,
 				value: encryptedSettings,
 				loadOnStartup: false,
 			},

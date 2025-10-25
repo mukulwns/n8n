@@ -67,7 +67,7 @@ export class CredentialsController {
 		_res: unknown,
 		@Query query: CredentialsGetManyRequestQuery,
 	) {
-		const tenantId = req.user.tenantId ?? '';
+		const tenantId = req.user.tenantId;
 
 		const credentials = await this.credentialsService.getMany(req.user, {
 			listQueryOptions: req.listQueryOptions,

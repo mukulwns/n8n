@@ -25,9 +25,9 @@ export class ExternalSecretsService {
 		};
 	}
 
-	async getProviders() {
+	async getProviders(tenantId: string) {
 		return Container.get(ExternalSecretsManager)
-			.getProvidersWithSettings()
+			.getProvidersWithSettings(tenantId)
 			.map(({ provider, settings }) => ({
 				displayName: provider.displayName,
 				name: provider.name,
@@ -98,20 +98,34 @@ export class ExternalSecretsService {
 		return mergedData;
 	}
 
-	async saveProviderSettings(providerName: string, data: IDataObject, userId: string) {
+	async saveProviderSettings(
+		providerName: string,
+		data: IDataObject,
+		userId: string,
+		tenantId: string,
+	) {
 		const providerAndSettings =
 			Container.get(ExternalSecretsManager).getProviderWithSettings(providerName);
 		const { settings } = providerAndSettings;
 		const newData = this.unredact(data, settings.settings);
-		await Container.get(ExternalSecretsManager).setProviderSettings(providerName, newData, userId);
+		await Container.get(ExternalSecretsManager).setProviderSettings(
+			providerName,
+			newData,
+			userId,
+			tenantId,
+		);
 	}
 
-	async saveProviderConnected(providerName: string, connected: boolean) {
-		await Container.get(ExternalSecretsManager).setProviderConnected(providerName, connected);
+	async saveProviderConnected(providerName: string, connected: boolean, tenantId: string) {
+		await Container.get(ExternalSecretsManager).setProviderConnected(
+			providerName,
+			connected,
+			tenantId,
+		);
 		return this.getProvider(providerName);
 	}
 
-	getAllSecrets(): Record<string, string[]> {
+	getAllSecrets(tenantId: string): Record<string, string[]> {
 		return Container.get(ExternalSecretsManager).getAllSecretNames();
 	}
 
